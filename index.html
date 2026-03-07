@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clinic Pro</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --bg: #080d14;
+            --surface: #0e1620;
+            --card: #131e2e;
+            --elevated: #1a2740;
+            --border: #1e3050;
+            --border-soft: #162238;
+            --accent: #4f9cf9;
+            --accent-glow: rgba(79, 156, 249, 0.15);
+            --success: #22c55e;
+            --success-dim: rgba(34, 197, 94, 0.12);
+            --danger: #f43f5e;
+            --danger-dim: rgba(244, 63, 94, 0.12);
+            --warning: #f59e0b;
+            --warning-dim: rgba(245, 158, 11, 0.12);
+            --purple: #a78bfa;
+            --purple-dim: rgba(167, 139, 250, 0.12);
+            --text: #e2eaf4;
+            --text-dim: #6b83a0;
+            --text-muted: #374e6a;
+            --drawer-w: 300px;
+            --topbar: 64px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            font-size: 14px;
+        }
+
+        /* LOGIN */
+        #loginScreen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9000;
+            transition: opacity 0.3s;
+        }
+
+        #loginScreen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .login-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .login-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 6px;
+        }
+
+        .login-logo .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--accent);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .login-logo span {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .login-title {
+            text-align: center;
+            font-size: 15px;
+            color: var(--text-dim);
+        }
+
+        .login-box input {
+            background: var(--elevated);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+
+        .login-box input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .login-err {
+            color: #fb7185;
+            font-size: 12px;
+            text-align: center;
+            min-height: 16px;
+        }
+
+        .login-footer {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* LOADING SPINNER */
+        #loadingScreen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 8000;
+            gap: 14px;
+        }
+
+        #loadingScreen.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        /* SIDEBAR */
+        #sidebar {
+            width: var(--drawer-w);
+            height: 100vh;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .sidebar-logo {
+            padding: 20px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-logo .logo-icon {
+            width: 34px;
+            height: 34px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .sidebar-logo span {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .sidebar-user {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--elevated);
+        }
+
+        .user-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .user-email {
+            font-size: 11px;
+            color: var(--text-dim);
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-nav {
+            padding: 16px 12px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-muted);
+            padding: 6px 10px 8px;
+            margin-top: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 11px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.18s;
+            color: var(--text-dim);
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .nav-item:hover {
+            background: var(--elevated);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: var(--accent-glow);
+            color: var(--accent);
+        }
+
+        .nav-item .nav-icon {
+            font-size: 17px;
+            width: 22px;
+            text-align: center;
+        }
+
+        .nav-item .nav-badge {
+            margin-left: auto;
+            background: var(--danger);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 20px;
+        }
+
+        .sidebar-bottom {
+            padding: 14px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* MAIN */
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            height: var(--topbar);
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 28px;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+
+        .topbar h2 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            flex: 1;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            display: inline-block;
+            margin-right: 4px;
+        }
+
+        .sync-dot.syncing {
+            background: var(--warning);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px;
+        }
+
+        /* PANELS */
+        .panel {
+            display: none;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        /* STATS */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border-soft);
+            border-radius: 14px;
+            padding: 18px 20px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'DM Mono', monospace;
+            letter-spacing: -1px;
+        }
+
+        .stat-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* SEARCH */
+        .search-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .search-wrap {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-wrap input {
+            width: 100%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 14px 10px 38px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .search-wrap input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .search-wrap .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 15px;
+            pointer-events: none;
+        }
+
+        select.filter-sel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        select.filter-sel:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* TABLE */
+        .table-wrap {
+            background: var(--card);
+            border: 1px solid var(--border-soft);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 13px 18px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-dim);
+            background: var(--elevated);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 13px 18px;
+            border-bottom: 1px solid var(--border-soft);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .pt-name {
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .pt-name:hover {
+            color: var(--accent);
+        }
+
+        .pt-sub {
+            font-size: 11.5px;
+            color: var(--text-dim);
+            margin-top: 2px;
+            font-family: 'DM Mono', monospace;
+        }
+
+        /* BADGES */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11.5px;
+            font-weight: 600;
+            font-family: 'DM Mono', monospace;
+        }
+
+        .badge-ok {
+            background: var(--success-dim);
+            color: #4ade80;
+        }
+
+        .badge-low {
+            background: var(--warning-dim);
+            color: #fbbf24;
+        }
+
+        .badge-empty {
+            background: var(--danger-dim);
+            color: #fb7185;
+        }
+
+        .badge-doc {
+            background: var(--accent-glow);
+            color: var(--accent);
+            font-size: 11px;
+            padding: 3px 9px;
+        }
+
+        .badge-purple {
+            background: var(--purple-dim);
+            color: var(--purple);
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 9px 16px;
+            border-radius: 9px;
+            border: none;
+            font-weight: 600;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.18s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #3a87e8;
+        }
+
+        .btn-success {
+            background: var(--success-dim);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.25);
+        }
+
+        .btn-success:hover {
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .btn-warning {
+            background: var(--warning-dim);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .btn-warning:hover {
+            background: rgba(245, 158, 11, 0.2);
+        }
+
+        .btn-danger {
+            background: var(--danger-dim);
+            color: #fb7185;
+            border: 1px solid rgba(244, 63, 94, 0.25);
+        }
+
+        .btn-danger:hover {
+            background: rgba(244, 63, 94, 0.2);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            background: var(--elevated);
+            color: var(--text);
+        }
+
+        .btn-purple {
+            background: var(--purple-dim);
+            color: var(--purple);
+            border: 1px solid rgba(167, 139, 250, 0.25);
+        }
+
+        .btn-purple:hover {
+            background: rgba(167, 139, 250, 0.2);
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 7px;
+        }
+
+        /* FORMS */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full {
+            grid-column: 1/-1;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+        }
+
+        .form-group input,
+        .form-group select {
+            background: var(--elevated);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 11px 13px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .form-group input[type=range] {
+            padding: 4px 0;
+            border: none;
+            background: none;
+        }
+
+        .sessions-val {
+            font-size: 22px;
+            font-weight: 700;
+            font-family: 'DM Mono', monospace;
+            color: var(--accent);
+        }
+
+        .form-card {
+            background: var(--card);
+            border: 1px solid var(--border-soft);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 18px;
+        }
+
+        .form-card h3 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* PATIENT PICKER */
+        .patient-picker {
+            position: relative;
+        }
+
+        .patient-picker input {
+            width: 100%;
+        }
+
+        .pt-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: var(--elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            z-index: 100;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .pt-dropdown.open {
+            display: block;
+        }
+
+        .pt-option {
+            padding: 10px 14px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .pt-option:hover {
+            background: var(--card);
+        }
+
+        .pt-option .pt-opt-name {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .pt-option .pt-opt-sub {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .pt-option.selected {
+            background: var(--accent-glow);
+        }
+
+        /* DOCTORS */
+        .doctors-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+
+        .doctor-card {
+            background: var(--card);
+            border: 1px solid var(--border-soft);
+            border-radius: 14px;
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .doctor-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--accent-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        /* PROFILES */
+        .profiles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 14px;
+        }
+
+        .profile-card {
+            background: var(--card);
+            border: 1px solid var(--border-soft);
+            border-radius: 14px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .profile-card:hover {
+            border-color: var(--accent);
+            background: var(--elevated);
+            transform: translateY(-2px);
+        }
+
+        .profile-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent-glow), var(--purple-dim));
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'DM Mono', monospace;
+        }
+
+        .session-bar-wrap {
+            margin-top: 4px;
+        }
+
+        .session-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 5px;
+        }
+
+        .session-bar {
+            height: 5px;
+            background: var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .session-bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.4s ease;
+        }
+
+        /* PROFILE DETAIL */
+        #profileDetail {
+            display: none;
+        }
+
+        #profileDetail.active {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .profile-detail-header {
+            background: var(--card);
+            border: 1px solid var(--border-soft);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .profile-detail-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, var(--accent-glow), var(--purple-dim));
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'DM Mono', monospace;
+        }
+
+        .profile-detail-info {
+            flex: 1;
+        }
+
+        .profile-detail-info h2 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            margin-bottom: 8px;
+        }
+
+        .profile-detail-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .profile-detail-meta span {
+            font-size: 12.5px;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .profile-stat {
+            background: var(--elevated);
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+
+        .ps-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .ps-val {
+            font-size: 22px;
+            font-weight: 700;
+            font-family: 'DM Mono', monospace;
+        }
+
+        .sessions-section {
+            background: var(--card);
+            border: 1px solid var(--border-soft);
+            border-radius: 16px;
+            padding: 22px;
+        }
+
+        .sessions-section h3 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            padding: 13px 0;
+            border-bottom: 1px solid var(--border-soft);
+            align-items: center;
+        }
+
+        .timeline-item:last-child {
+            border-bottom: none;
+        }
+
+        .tl-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            flex-shrink: 0;
+            background: var(--success-dim);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .tl-info {
+            flex: 1;
+        }
+
+        .tl-date {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .tl-sub {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .tl-num {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        /* TOAST */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            background: var(--success);
+            color: white;
+            padding: 13px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 13px;
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state .empty-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- LOADING -->
+    <div id="loadingScreen">
+        <div class="spinner"></div>
+        <div class="loading-text">Connecting to database…</div>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="loginScreen" class="hidden">
+        <div class="login-box">
+            <div class="login-logo">
+                <div class="logo-icon">🏥</div>
+                <span>Clinic Pro</span>
+            </div>
+            <div class="login-title">Sign in to access the clinic dashboard</div>
+            <input type="email" id="loginEmail" placeholder="Email address" autocomplete="email" />
+            <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" />
+            <div class="login-err" id="loginErr"></div>
+            <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px;"
+                onclick="doLogin()">Sign In</button>
+            <div class="login-footer">Contact your admin to get access credentials.</div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div id="sidebar" style="display:none;">
+        <div class="sidebar-logo">
+            <div class="logo-icon">🏥</div>
+            <span>Clinic Pro</span>
+        </div>
+        <div class="sidebar-user">
+            <div class="user-dot"></div>
+            <div class="user-email" id="userEmail">—</div>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-label">Management</div>
+            <div class="nav-item active" onclick="showPanel('patients',this)">
+                <span class="nav-icon">👥</span> Patients List
+                <span class="nav-badge" id="lowBadge" style="display:none">0</span>
+            </div>
+            <div class="nav-item" onclick="showPanel('profiles',this)">
+                <span class="nav-icon">🪪</span> Patient Profiles
+            </div>
+            <div class="nav-item" onclick="showPanel('booking',this)">
+                <span class="nav-icon">📅</span> Book a Session
+            </div>
+            <div class="nav-item" onclick="showPanel('add',this)">
+                <span class="nav-icon">➕</span> Add New Patient
+            </div>
+            <div class="nav-label">Team</div>
+            <div class="nav-item" onclick="showPanel('doctors',this)">
+                <span class="nav-icon">🩺</span> Associated Doctors
+            </div>
+        </div>
+        <div class="sidebar-bottom">
+            <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;" onclick="doLogout()">🚪 Sign
+                Out</button>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div id="main" style="display:none;">
+        <div class="topbar">
+            <h2 id="topbarTitle">Patients List</h2>
+            <div class="topbar-actions">
+                <span id="syncStatus"
+                    style="font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:5px;">
+                    <span class="sync-dot" id="syncDot"></span><span id="syncText">Live</span>
+                </span>
+                <button class="btn btn-ghost btn-sm" onclick="exportToCSV()">⬇ Export CSV</button>
+            </div>
+        </div>
+        <div class="content-area">
+
+            <!-- PATIENTS LIST -->
+            <div class="panel active" id="panel-patients">
+                <div class="stats-row" id="statsRow"></div>
+                <div class="search-row">
+                    <div class="search-wrap">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="searchInput" oninput="renderTable()"
+                            placeholder="Search by name or phone…">
+                    </div>
+                    <select class="filter-sel" id="doctorFilter" onchange="renderTable()">
+                        <option value="">All Doctors</option>
+                    </select>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Doctor</th>
+                                <th>Sessions Left</th>
+                                <th>Subscribed</th>
+                                <th>Amount (EGP)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patientBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PROFILES -->
+            <div class="panel" id="panel-profiles">
+                <div id="profilesGrid">
+                    <div class="search-row">
+                        <div class="search-wrap">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="profileSearch" oninput="renderProfiles()"
+                                placeholder="Search profiles…">
+                        </div>
+                    </div>
+                    <div class="profiles-grid" id="profilesContainer"></div>
+                </div>
+                <div id="profileDetail">
+                    <div style="margin-bottom:16px;">
+                        <button class="btn btn-ghost btn-sm" onclick="closeProfileDetail()">← Back to Profiles</button>
+                    </div>
+                    <div class="profile-detail-header">
+                        <div class="profile-detail-avatar" id="detailAvatar">?</div>
+                        <div class="profile-detail-info">
+                            <h2 id="detailName">—</h2>
+                            <div class="profile-detail-meta">
+                                <span>📞 <span id="detailPhone">—</span></span>
+                                <span>🩺 <span id="detailDoctor">—</span></span>
+                                <span>🕐 <span id="detailSlot">—</span></span>
+                                <span>💰 <span id="detailAmount">—</span> EGP</span>
+                            </div>
+                            <div class="profile-stats">
+                                <div class="profile-stat">
+                                    <div class="ps-label">Sessions Left</div>
+                                    <div class="ps-val" id="detailLeft" style="color:var(--accent)">0</div>
+                                </div>
+                                <div class="profile-stat">
+                                    <div class="ps-label">Subscribed</div>
+                                    <div class="ps-val" id="detailSubscribed" style="color:var(--purple)">0</div>
+                                </div>
+                                <div class="profile-stat">
+                                    <div class="ps-label">Sessions Booked</div>
+                                    <div class="ps-val" id="detailBooked" style="color:var(--success)">0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sessions-section">
+                        <h3>📋 Session History</h3>
+                        <div class="timeline" id="sessionTimeline"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOOKING -->
+            <div class="panel" id="panel-booking">
+                <div class="form-card">
+                    <h3>📅 Book a Session</h3>
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label>Patient Name</label>
+                            <div class="patient-picker">
+                                <input type="text" id="bookSearch" placeholder="Type to search patient…"
+                                    oninput="filterBookingList()" autocomplete="off">
+                                <div class="pt-dropdown" id="ptDropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Assigned Doctor</label><select id="bookDoctor">
+                                <option value="">Select Doctor</option>
+                            </select></div>
+                        <div class="form-group"><label>Session Time</label><input type="time" id="bookTime"
+                                value="09:00"></div>
+                        <div class="form-group full"><label>Session Date</label><input type="date" id="bookDate"></div>
+                        <div class="form-group full"><label>Notes (optional)</label><input type="text" id="bookNotes"
+                                placeholder="e.g. Follow-up, Initial assessment…"></div>
+                    </div>
+                    <div id="selectedPatientInfo" style="display:none;margin-top:14px;">
+                        <div
+                            style="background:var(--elevated);border-radius:10px;padding:14px 16px;display:flex;gap:18px;align-items:center;">
+                            <div style="font-size:28px;">👤</div>
+                            <div>
+                                <div style="font-weight:700;" id="selPtName">—</div>
+                                <div style="font-size:12px;color:var(--text-dim);" id="selPtInfo">—</div>
+                            </div>
+                            <div style="margin-left:auto;text-align:right;">
+                                <div class="sessions-val" id="selPtSessions">0</div>
+                                <div style="font-size:11px;color:var(--text-dim);">Sessions Left</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top:18px;display:flex;gap:10px;">
+                        <button class="btn btn-primary" onclick="confirmBooking()">✅ Confirm Booking</button>
+                        <button class="btn btn-ghost" onclick="clearBooking()">Clear</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADD PATIENT -->
+            <div class="panel" id="panel-add">
+                <div class="form-card">
+                    <h3>➕ Add New Patient</h3>
+                    <div class="form-grid">
+                        <div class="form-group full"><label>Full Name</label><input type="text" id="pName"
+                                placeholder="e.g. Ahmed Mohamed"></div>
+                        <div class="form-group"><label>Mobile Phone</label><input type="text" id="pPhone"
+                                placeholder="e.g. 01012345678"></div>
+                        <div class="form-group"><label>Assigned Doctor</label><select id="pDoctor"></select></div>
+                        <div class="form-group full">
+                            <label>Sessions Subscribed &nbsp;<span class="sessions-val" id="sessVal">12</span></label>
+                            <input type="range" min="0" max="24" value="12" id="pSessions"
+                                oninput="document.getElementById('sessVal').textContent=this.value">
+                        </div>
+                        <div class="form-group"><label>Amount Paid (EGP)</label><input type="number" id="pAmount"
+                                placeholder="e.g. 2400" min="0"></div>
+                        <div class="form-group"><label>Preferred Slot</label><select id="pTime">
+                                <option value="AM">Morning (AM)</option>
+                                <option value="PM">Afternoon (PM)</option>
+                            </select></div>
+                    </div>
+                    <div style="margin-top:20px;display:flex;gap:10px;">
+                        <button class="btn btn-primary" onclick="savePatient()">💾 Save Patient</button>
+                        <button class="btn btn-ghost" onclick="clearAddForm()">Clear</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOCTORS -->
+            <div class="panel" id="panel-doctors">
+                <div class="doctors-grid" id="doctorsGrid"></div>
+            </div>
+
+        </div>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <!-- FIREBASE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+            from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import {
+            getFirestore, collection, doc, onSnapshot,
+            setDoc, deleteDoc, updateDoc
+        }
+            from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        /* ── CONFIG ── */
+        const firebaseConfig = {
+            apiKey: "AIzaSyDe4BRi8_Jd20YID4orh1vebCAWuHAKGp4",
+            authDomain: "my-strength-clinic-c0c79.firebaseapp.com",
+            projectId: "my-strength-clinic-c0c79",
+            storageBucket: "my-strength-clinic-c0c79.firebasestorage.app",
+            messagingSenderId: "687030710998",
+            appId: "1:687030710998:web:08b337729d94795a2fcf77",
+            measurementId: "G-8E1VH8TXF6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const DOCTORS = ["Dr. Youssef", "Dr. Hadeer", "Dr. Hamdoon", "Dr. Abdullah", "Dr. Habiba", "Dr. Ahmed Yehia", "Dr. Habiba Saied", "Dr. Yehia Sadek", "Dr. Zeyad Ramzy"];
+        const DOCTOR_EMOJIS = ["👨‍⚕️", "👩‍⚕️", "👨‍⚕️", "👨‍⚕️", "👩‍⚕️", "👨‍⚕️", "👩‍⚕️", "👨‍⚕️", "👨‍⚕️"];
+        const TITLES = { patients: 'Patients List', profiles: 'Patient Profiles', booking: 'Book a Session', add: 'Add New Patient', doctors: 'Associated Doctors' };
+
+        let patients = [];
+        let bookingPatientId = null;
+        let unsubscribe = null;
+
+        /* ── AUTH ── */
+        window.doLogin = async () => {
+            const email = document.getElementById('loginEmail').value.trim();
+            const pass = document.getElementById('loginPassword').value;
+            const errEl = document.getElementById('loginErr');
+            errEl.textContent = '';
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (e) {
+                errEl.textContent = 'Invalid email or password. Try again.';
+            }
+        };
+
+        window.doLogout = async () => {
+            if (unsubscribe) unsubscribe();
+            await signOut(auth);
+        };
+
+        document.getElementById('loginPassword').addEventListener('keydown', e => {
+            if (e.key === 'Enter') window.doLogin();
+        });
+
+        onAuthStateChanged(auth, user => {
+            document.getElementById('loadingScreen').classList.add('hidden');
+            if (user) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('sidebar').style.display = 'flex';
+                document.getElementById('main').style.display = 'flex';
+                document.getElementById('userEmail').textContent = user.email;
+                startListening();
+                populateSelects();
+                renderTable();
+                renderStats();
+                document.getElementById('bookDate').value = new Date().toISOString().split('T')[0];
+            } else {
+                document.getElementById('sidebar').style.display = 'none';
+                document.getElementById('main').style.display = 'none';
+                document.getElementById('loginScreen').classList.remove('hidden');
+                patients = [];
+            }
+        });
+
+        /* ── FIRESTORE REAL-TIME LISTENER ── */
+        function startListening() {
+            setSyncing(true);
+            unsubscribe = onSnapshot(collection(db, 'patients'), snapshot => {
+                patients = snapshot.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+                patients.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                setSyncing(false);
+                renderTable();
+                renderStats();
+            }, err => {
+                console.error(err);
+                toast('Database error: ' + err.message, true);
+                setSyncing(false);
+            });
+        }
+
+        function setSyncing(s) {
+            const dot = document.getElementById('syncDot');
+            const text = document.getElementById('syncText');
+            if (s) { dot.classList.add('syncing'); text.textContent = 'Syncing…'; }
+            else { dot.classList.remove('syncing'); text.textContent = 'Live'; }
+        }
+
+        /* ── SAVE / DELETE ── */
+        async function saveToFirestore(p) {
+            setSyncing(true);
+            const { firestoreId, ...data } = p;
+            await setDoc(doc(db, 'patients', firestoreId || p.id.toString()), data);
+        }
+
+        async function deleteFromFirestore(firestoreId) {
+            setSyncing(true);
+            await deleteDoc(doc(db, 'patients', firestoreId));
+        }
+
+        /* ── UI ── */
+        window.showPanel = (id, el) => {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('panel-' + id).classList.add('active');
+            el.classList.add('active');
+            document.getElementById('topbarTitle').textContent = TITLES[id];
+            if (id === 'patients') { renderTable(); renderStats(); }
+            if (id === 'doctors') renderDoctors();
+            if (id === 'profiles') { closeProfileDetail(); renderProfiles(); }
+        };
+
+        function populateSelects() {
+            ['doctorFilter', 'bookDoctor', 'pDoctor'].forEach(sid => {
+                const el = document.getElementById(sid); if (!el) return;
+                el.innerHTML = sid === 'doctorFilter' ? '<option value="">All Doctors</option>' : '<option value="">Select Doctor</option>';
+                DOCTORS.forEach(d => el.innerHTML += `<option>${d}</option>`);
+            });
+        }
+
+        /* STATS */
+        function renderStats() {
+            const total = patients.length;
+            const low = patients.filter(p => p.sessions > 0 && p.sessions <= 2).length;
+            const empty = patients.filter(p => p.sessions === 0).length;
+            const subs = patients.reduce((a, p) => a + (p.subscribed || 0), 0);
+            document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Patients</div><div class="stat-value" style="color:var(--accent)">${total}</div><div class="stat-sub">registered</div></div>
+    <div class="stat-card"><div class="stat-label">Sessions Low</div><div class="stat-value" style="color:var(--warning)">${low}</div><div class="stat-sub">≤ 2 sessions left</div></div>
+    <div class="stat-card"><div class="stat-label">No Sessions</div><div class="stat-value" style="color:var(--danger)">${empty}</div><div class="stat-sub">need renewal</div></div>
+    <div class="stat-card"><div class="stat-label">Total Subscribed</div><div class="stat-value" style="color:var(--success)">${subs}</div><div class="stat-sub">across all patients</div></div>`;
+            const badge = document.getElementById('lowBadge');
+            const cnt = low + empty;
+            badge.textContent = cnt;
+            badge.style.display = cnt > 0 ? '' : 'none';
+        }
+
+        /* TABLE */
+        function renderTable() {
+            renderStats();
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const df = document.getElementById('doctorFilter').value;
+            const filtered = patients.filter(p => (p.name.toLowerCase().includes(q) || (p.phone || '').includes(q)) && (!df || p.doctor === df));
+            const body = document.getElementById('patientBody');
+            if (!filtered.length) { body.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">🔍</div><p>No patients found</p></div></td></tr>`; return; }
+            body.innerHTML = filtered.map(p => {
+                const cls = p.sessions === 0 ? 'badge-empty' : p.sessions <= 2 ? 'badge-low' : 'badge-ok';
+                return `<tr>
+      <td><div class="pt-name" onclick="openProfileById('${p.firestoreId}')">${p.name}</div><div class="pt-sub">${p.phone || '—'} · ${p.time || '—'}</div></td>
+      <td><span class="badge badge-doc">${p.doctor}</span></td>
+      <td><span class="badge ${cls}">${p.sessions}</span></td>
+      <td><span style="font-family:'DM Mono',monospace;font-size:13px;">${p.subscribed || 0}</span></td>
+      <td><span style="font-family:'DM Mono',monospace;font-size:13px;">${p.amount || 0}</span></td>
+      <td>
+        <button class="btn btn-success btn-sm" onclick="updateSession('${p.firestoreId}',-1)">Book</button>
+        <button class="btn btn-warning btn-sm" onclick="updateSession('${p.firestoreId}',1)">+1</button>
+        <button class="btn btn-purple btn-sm" onclick="openProfileById('${p.firestoreId}')">🪪</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePatient('${p.firestoreId}')">✕</button>
+      </td></tr>`;
+            }).join('');
+        }
+
+        window.updateSession = async (fid, delta) => {
+            const p = patients.find(x => x.firestoreId === fid); if (!p) return;
+            if (delta === -1 && p.sessions <= 0) { toast('No sessions left for ' + p.name, true); return; }
+            if (delta === 1 && p.sessions >= (p.subscribed || 0)) { toast('Already at max sessions', true); return; }
+            const updated = { ...p, sessions: p.sessions + delta };
+            await saveToFirestore(updated);
+        };
+
+        window.deletePatient = async (fid) => {
+            if (!confirm('Delete this patient?')) return;
+            await deleteFromFirestore(fid);
+        };
+
+        /* ADD PATIENT */
+        window.savePatient = async () => {
+            const name = document.getElementById('pName').value.trim();
+            const phone = document.getElementById('pPhone').value.trim();
+            const doctor = document.getElementById('pDoctor').value;
+            const sessions = parseInt(document.getElementById('pSessions').value) || 0;
+            const amount = document.getElementById('pAmount').value;
+            const time = document.getElementById('pTime').value;
+            if (!name) { toast('Please enter a patient name', true); return; }
+            if (!doctor) { toast('Please select a doctor', true); return; }
+            const newP = { id: Date.now(), name, phone, doctor, sessions, subscribed: sessions, amount, time, history: [] };
+            await saveToFirestore(newP);
+            clearAddForm();
+            toast('Patient "' + name + '" added ✅');
+        };
+
+        window.clearAddForm = () => {
+            ['pName', 'pPhone', 'pAmount'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('pSessions').value = 12;
+            document.getElementById('sessVal').textContent = 12;
+        };
+
+        /* BOOKING */
+        window.filterBookingList = () => {
+            const q = document.getElementById('bookSearch').value.toLowerCase();
+            const dd = document.getElementById('ptDropdown');
+            if (!q) { dd.classList.remove('open'); return; }
+            const matches = patients.filter(p => p.name.toLowerCase().includes(q) || (p.phone || '').includes(q));
+            if (!matches.length) { dd.innerHTML = '<div class="pt-option"><div class="pt-opt-name" style="color:var(--text-muted)">No patients found</div></div>'; dd.classList.add('open'); return; }
+            dd.innerHTML = matches.map(p => `
+    <div class="pt-option${bookingPatientId === p.firestoreId ? ' selected' : ''}" onclick="selectBookingPatient('${p.firestoreId}')">
+      <div class="pt-opt-name">${p.name}</div>
+      <div class="pt-opt-sub">${p.phone || '—'} · ${p.doctor} · ${p.sessions} sessions left</div>
+    </div>`).join('');
+            dd.classList.add('open');
+        };
+
+        window.selectBookingPatient = (fid) => {
+            const p = patients.find(x => x.firestoreId === fid); if (!p) return;
+            bookingPatientId = fid;
+            document.getElementById('bookSearch').value = p.name;
+            document.getElementById('ptDropdown').classList.remove('open');
+            document.getElementById('bookDoctor').value = p.doctor;
+            document.getElementById('selPtName').textContent = p.name;
+            document.getElementById('selPtInfo').textContent = (p.phone || '—') + ' · ' + p.doctor + ' · ' + (p.time || '—');
+            document.getElementById('selPtSessions').textContent = p.sessions;
+            document.getElementById('selectedPatientInfo').style.display = 'block';
+        };
+
+        window.confirmBooking = async () => {
+            if (!bookingPatientId) { toast('Please select a patient first', true); return; }
+            const time = document.getElementById('bookTime').value;
+            const date = document.getElementById('bookDate').value;
+            const notes = document.getElementById('bookNotes').value.trim();
+            const doctor = document.getElementById('bookDoctor').value;
+            if (!date) { toast('Please select a date', true); return; }
+            const p = patients.find(x => x.firestoreId === bookingPatientId);
+            if (p.sessions <= 0) { toast('No sessions left for ' + p.name, true); return; }
+            const newHistory = [{ date, time, doctor: doctor || p.doctor, notes, bookedAt: Date.now() }, ...(p.history || [])];
+            const updated = { ...p, sessions: p.sessions - 1, history: newHistory };
+            await saveToFirestore(updated);
+            document.getElementById('selPtSessions').textContent = updated.sessions;
+            document.getElementById('bookNotes').value = '';
+            toast(`Session booked for ${p.name} on ${fmtDate(date)} at ${time} ✅`);
+        };
+
+        window.clearBooking = () => {
+            bookingPatientId = null;
+            ['bookSearch', 'bookNotes'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('bookDoctor').value = '';
+            document.getElementById('bookTime').value = '09:00';
+            document.getElementById('bookDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('selectedPatientInfo').style.display = 'none';
+            document.getElementById('ptDropdown').classList.remove('open');
+        };
+
+        /* PROFILES */
+        function renderProfiles() {
+            const q = document.getElementById('profileSearch').value.toLowerCase();
+            const container = document.getElementById('profilesContainer');
+            const filtered = patients.filter(p => p.name.toLowerCase().includes(q) || (p.phone || '').includes(q));
+            if (!filtered.length) { container.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔍</div><p>No profiles found</p></div>`; return; }
+            container.innerHTML = filtered.map(p => {
+                const initials = p.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                const booked = (p.history || []).length;
+                const pct = p.subscribed > 0 ? Math.round(((p.subscribed - p.sessions) / p.subscribed) * 100) : 0;
+                const barColor = p.sessions === 0 ? 'var(--danger)' : p.sessions <= 2 ? 'var(--warning)' : 'var(--success)';
+                const cls = p.sessions === 0 ? 'badge-empty' : p.sessions <= 2 ? 'badge-low' : 'badge-ok';
+                const last = booked > 0 ? fmtDate(p.history[0].date) : 'No sessions yet';
+                return `<div class="profile-card" onclick="openProfileById('${p.firestoreId}')">
+      <div style="display:flex;gap:12px;align-items:center;">
+        <div class="profile-avatar">${initials}</div>
+        <div><div style="font-weight:700;font-size:14px;">${p.name}</div><div style="font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace;">${p.phone || '—'}</div></div>
+      </div>
+      <span class="badge badge-doc" style="font-size:11px;align-self:flex-start;">${p.doctor}</span>
+      <div class="session-bar-wrap">
+        <div class="session-bar-label"><span>${p.sessions} left / ${p.subscribed || 0} total</span><span>${booked} booked</span></div>
+        <div class="session-bar"><div class="session-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+        <span class="badge ${cls}" style="font-size:11px;">${p.sessions} left</span>
+        <span style="font-size:11px;color:var(--text-muted);">${last}</span>
+      </div>
+    </div>`;
+            }).join('');
+        }
+
+        window.openProfileById = (fid) => {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('panel-profiles').classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => { if (n.textContent.includes('Patient Profiles')) n.classList.add('active'); });
+            document.getElementById('topbarTitle').textContent = 'Patient Profiles';
+            showProfileDetail(fid);
+        };
+
+        function showProfileDetail(fid) {
+            const p = patients.find(x => x.firestoreId === fid); if (!p) return;
+            document.getElementById('profilesGrid').style.display = 'none';
+            document.getElementById('profileDetail').style.display = 'block';
+            const initials = p.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+            document.getElementById('detailAvatar').textContent = initials;
+            document.getElementById('detailName').textContent = p.name;
+            document.getElementById('detailPhone').textContent = p.phone || '—';
+            document.getElementById('detailDoctor').textContent = p.doctor;
+            document.getElementById('detailSlot').textContent = p.time || '—';
+            document.getElementById('detailAmount').textContent = Number(p.amount || 0).toLocaleString();
+            document.getElementById('detailLeft').textContent = p.sessions;
+            document.getElementById('detailSubscribed').textContent = p.subscribed || 0;
+            const booked = (p.history || []).length;
+            document.getElementById('detailBooked').textContent = booked;
+            const tl = document.getElementById('sessionTimeline');
+            if (!booked) {
+                tl.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>No sessions booked yet.</p></div>`;
+            } else {
+                tl.innerHTML = (p.history || []).map((h, i) => `
+      <div class="timeline-item">
+        <div class="tl-dot">📋</div>
+        <div class="tl-info">
+          <div class="tl-date">${fmtDate(h.date)} &nbsp;·&nbsp; ${h.time || '—'}</div>
+          <div class="tl-sub">${h.doctor || p.doctor}${h.notes ? ' · <em style="color:var(--text-muted)">' + h.notes + '</em>' : ''}</div>
+        </div>
+        <div class="tl-num">Session #${booked - i}</div>
+      </div>`).join('');
+            }
+        }
+
+        window.closeProfileDetail = () => {
+            document.getElementById('profilesGrid').style.display = 'block';
+            document.getElementById('profileDetail').style.display = 'none';
+            renderProfiles();
+        };
+
+        /* DOCTORS */
+        function renderDoctors() {
+            document.getElementById('doctorsGrid').innerHTML = DOCTORS.map((d, i) => {
+                const count = patients.filter(p => p.doctor === d).length;
+                return `<div class="doctor-card">
+      <div class="doctor-avatar">${DOCTOR_EMOJIS[i]}</div>
+      <div style="font-weight:700;font-size:14px;">${d}</div>
+      <div style="font-size:12px;color:var(--text-dim);">${count} patient${count !== 1 ? 's' : ''} assigned</div>
+      <span class="badge badge-doc" style="margin-top:6px;align-self:flex-start;">${count > 0 ? 'Active' : 'Available'}</span>
+    </div>`;
+            }).join('');
+        }
+
+        /* EXPORT */
+        window.exportToCSV = () => {
+            let csv = 'Name,Phone,Doctor,Slot,SessionsLeft,Subscribed,AmountEGP,TotalBooked\n';
+            patients.forEach(p => csv += `${p.name},${p.phone || ''},${p.doctor},${p.time},${p.sessions},${p.subscribed || 0},${p.amount || 0},${(p.history || []).length}\n`);
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+            a.download = 'ClinicPro_Export.csv';
+            a.click();
+        };
+
+        /* HELPERS */
+        function fmtDate(d) {
+            if (!d) return '—';
+            const [y, m, day] = d.split('-');
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `${parseInt(day)} ${months[parseInt(m) - 1]} ${y}`;
+        }
+
+        function toast(msg, err = false) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast' + (err ? ' error' : '') + ' show';
+            setTimeout(() => t.classList.remove('show'), 3200);
+        }
+
+        window.toast = toast;
+
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.patient-picker')) document.getElementById('ptDropdown').classList.remove('open');
+        });
+    </script>
+</body>
+
+</html>
