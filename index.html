@@ -1779,8 +1779,37 @@
                         <div class="form-group"><label>Assigned Doctor</label><select id="bookDoctor">
                                 <option value="">Select Doctor</option>
                             </select></div>
-                        <div class="form-group"><label>Session Time</label><input type="time" id="bookTime"
-                                value="09:00"></div>
+                        <div class="form-group"><label>Session Time</label>
+                            <div style="display:flex;gap:8px;">
+                                <select id="bookHour"
+                                    style="flex:1;background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 10px;border-radius:10px;font-size:13.5px;font-family:inherit;">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9" selected>9</option>
+                                    <option value="10">10</option>
+                                    <option value="11">11</option>
+                                    <option value="12">12</option>
+                                </select>
+                                <select id="bookMin"
+                                    style="flex:1;background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 10px;border-radius:10px;font-size:13.5px;font-family:inherit;">
+                                    <option value="00" selected>00</option>
+                                    <option value="15">15</option>
+                                    <option value="30">30</option>
+                                    <option value="45">45</option>
+                                </select>
+                                <select id="bookAmPm"
+                                    style="flex:1;background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 10px;border-radius:10px;font-size:13.5px;font-family:inherit;">
+                                    <option value="AM" selected>AM</option>
+                                    <option value="PM">PM</option>
+                                </select>
+                            </div>
+                        </div>
                         <div class="form-group full"><label>Session Date</label><input type="date" id="bookDate"></div>
                         <div class="form-group full"><label>Notes (optional)</label><input type="text" id="bookNotes"
                                 placeholder="e.g. Follow-up, Initial assessment…"></div>
@@ -2154,7 +2183,10 @@
 
         window.confirmBooking = async () => {
             if (!bookingPatientId) { toast('Please select a patient first', true); return; }
-            const time = document.getElementById('bookTime').value;
+            const hour = document.getElementById('bookHour').value;
+            const min = document.getElementById('bookMin').value;
+            const ampm = document.getElementById('bookAmPm').value;
+            const time = `${hour}:${min} ${ampm}`;
             const date = document.getElementById('bookDate').value;
             const notes = document.getElementById('bookNotes').value.trim();
             const doctor = document.getElementById('bookDoctor').value;
@@ -2166,14 +2198,16 @@
             await saveToFirestore(updated);
             document.getElementById('selPtSessions').textContent = updated.sessions;
             document.getElementById('bookNotes').value = '';
-            toast(`Session booked for ${p.name} on ${fmtDate(date)} at ${time} ✅`);
+            toast(`Session booked for ${p.name} on ${fmtDate(date)} at ${fmtTime(time)} ✅`);
         };
 
         window.clearBooking = () => {
             bookingPatientId = null;
             ['bookSearch', 'bookNotes'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('bookDoctor').value = '';
-            document.getElementById('bookTime').value = '09:00';
+            document.getElementById('bookHour').value = '9';
+            document.getElementById('bookMin').value = '00';
+            document.getElementById('bookAmPm').value = 'AM';
             document.getElementById('bookDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('selectedPatientInfo').style.display = 'none';
             document.getElementById('ptDropdown').classList.remove('open');
@@ -2242,7 +2276,7 @@
       <div class="timeline-item">
         <div class="tl-dot">📋</div>
         <div class="tl-info">
-          <div class="tl-date">${fmtDate(h.date)} &nbsp;·&nbsp; ${h.time || '—'}</div>
+          <div class="tl-date">${fmtDate(h.date)} &nbsp;·&nbsp; ${fmtTime(h.time)}</div>
           <div class="tl-sub">${h.doctor || p.doctor}${h.notes ? ' · <em style="color:var(--text-muted)">' + h.notes + '</em>' : ''}</div>
         </div>
         <div class="tl-num">Session #${booked - i}</div>
@@ -2350,7 +2384,7 @@
                 (p.history || []).forEach(h => {
                     if (h.doctor === schedActiveDoctor) {
                         if (!sessionsByDate[h.date]) sessionsByDate[h.date] = [];
-                        sessionsByDate[h.date].push({ ...h, patientName: p.name, patientPhone: p.phone || '—' });
+                        sessionsByDate[h.date].push({ ...h, patientName: p.name, patientPhone: p.phone || '—', firestoreId: p.firestoreId });
                     }
                 });
             });
@@ -2403,15 +2437,33 @@
             }
 
             container.innerHTML += sessions.map(s => `
-    <div class="sched-slot">
-      <div class="sched-time">${s.time || '—'}</div>
+    <div class="sched-slot" id="slot-${s.bookedAt}">
+      <div class="sched-time">${fmtTime(s.time)}</div>
       <div class="sched-slot-info">
         <div class="sched-pt-name">${s.patientName}</div>
         <div class="sched-pt-sub">📞 ${s.patientPhone}</div>
         ${s.notes ? `<div class="sched-notes">📝 ${s.notes}</div>` : ''}
       </div>
+      <button class="btn btn-danger btn-sm" style="flex-shrink:0;" onclick="cancelSchedSession('${s.firestoreId}', ${s.bookedAt})">
+        ✕ Cancel
+      </button>
     </div>`).join('');
         }
+
+        window.cancelSchedSession = async (firestoreId, bookedAt) => {
+            const p = patients.find(x => x.firestoreId === firestoreId);
+            if (!p) return;
+            const sessionIdx = (p.history || []).findIndex(h => h.bookedAt === bookedAt);
+            if (sessionIdx === -1) return;
+            if (!confirm(`Cancel session for ${p.name}? This will restore 1 session to their balance.`)) return;
+
+            // Remove from history and restore the session count
+            const newHistory = [...(p.history || [])];
+            newHistory.splice(sessionIdx, 1);
+            const updated = { ...p, sessions: Math.min(p.sessions + 1, p.subscribed || 0), history: newHistory };
+            await saveToFirestore(updated);
+            toast(`Session cancelled for ${p.name} — 1 session restored ✅`);
+        };
 
         function toDateStr(d) {
             return d.toISOString().split('T')[0];
@@ -2433,6 +2485,19 @@
             const [y, m, day] = d.split('-');
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             return `${parseInt(day)} ${months[parseInt(m) - 1]} ${y}`;
+        }
+
+        // Accepts "HH:MM" (24h) or already-formatted "9:00 AM" — always returns "9:00 AM" style
+        function fmtTime(t) {
+            if (!t || t === '—') return '—';
+            // Already 12h format (contains AM/PM)
+            if (t.includes('AM') || t.includes('PM')) return t;
+            // Convert from 24h "HH:MM"
+            const [hStr, mStr] = t.split(':');
+            let h = parseInt(hStr);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            return `${h}:${mStr} ${ampm}`;
         }
 
         function toast(msg, err = false) {
