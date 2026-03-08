@@ -2075,7 +2075,7 @@
         }
 
         /* STATS */
-        function renderStats() {
+        window.renderStats = function renderStats() {
             const total = patients.length;
             const low = patients.filter(p => p.sessions > 0 && p.sessions <= 2).length;
             const empty = patients.filter(p => p.sessions === 0).length;
@@ -2095,7 +2095,7 @@
         }
 
         /* TABLE */
-        function renderTable() {
+        window.renderTable = function renderTable() {
             renderStats();
             const q = document.getElementById('searchInput').value.toLowerCase();
             const df = document.getElementById('doctorFilter').value;
@@ -2214,7 +2214,7 @@
         };
 
         /* PROFILES */
-        function renderProfiles() {
+        window.renderProfiles = function renderProfiles() {
             const q = document.getElementById('profileSearch').value.toLowerCase();
             const container = document.getElementById('profilesContainer');
             const filtered = patients.filter(p => p.name.toLowerCase().includes(q) || (p.phone || '').includes(q));
