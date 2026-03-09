@@ -2423,7 +2423,10 @@
           <div class="tl-date">${fmtDate(h.date)} &nbsp;·&nbsp; ${fmtTime(h.time)}</div>
           <div class="tl-sub">${h.doctor || p.doctor}${h.sessionType ? ' · <span style="color:var(--purple)">' + h.sessionType + '</span>' : ''}${h.notes ? ' · <em style="color:var(--text-muted)">' + h.notes + '</em>' : ''}</div>
         </div>
-        <div class="tl-num">Session #${i + 1}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+          <div class="tl-num">Session #${i + 1}</div>
+          <button class="btn btn-danger btn-sm" onclick="cancelProfileSession('${p.firestoreId}',${h.bookedAt})">✕ Cancel</button>
+        </div>
       </div>`).join('');
             }
         }
@@ -2625,13 +2628,26 @@
             const sessionIdx = (p.history || []).findIndex(h => h.bookedAt === bookedAt);
             if (sessionIdx === -1) return;
             if (!confirm(`Cancel session for ${p.name}? This will restore 1 session to their balance.`)) return;
-
-            // Remove from history and restore the session count
             const newHistory = [...(p.history || [])];
             newHistory.splice(sessionIdx, 1);
             const updated = { ...p, sessions: Math.min(p.sessions + 1, p.subscribed || 0), history: newHistory };
             await saveToFirestore(updated);
             toast(`Session cancelled for ${p.name} — 1 session restored ✅`);
+        };
+
+        window.cancelProfileSession = async (firestoreId, bookedAt) => {
+            const p = patients.find(x => x.firestoreId === firestoreId);
+            if (!p) return;
+            const sessionIdx = (p.history || []).findIndex(h => h.bookedAt === bookedAt);
+            if (sessionIdx === -1) return;
+            if (!confirm(`Cancel this session for ${p.name}? This will restore 1 session to their balance.`)) return;
+            const newHistory = [...(p.history || [])];
+            newHistory.splice(sessionIdx, 1);
+            const updated = { ...p, sessions: Math.min(p.sessions + 1, p.subscribed || 0), history: newHistory };
+            await saveToFirestore(updated);
+            // Re-render the profile detail with updated data
+            showProfileDetail(firestoreId);
+            toast(`Session cancelled — 1 session restored to ${p.name} ✅`);
         };
 
         window.openEditModal = (firestoreId, bookedAt) => {
