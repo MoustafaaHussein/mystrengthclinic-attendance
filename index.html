@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Clinic Pro</title>
     <link
         href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
@@ -39,12 +39,17 @@
             padding: 0;
         }
 
+        html {
+            height: 100%;
+            overflow: hidden;
+        }
+
         body {
             font-family: 'DM Sans', sans-serif;
             background: var(--bg);
             color: var(--text);
             display: flex;
-            height: 100vh;
+            height: 100%;
             overflow: hidden;
             font-size: 14px;
         }
@@ -306,6 +311,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            min-width: 0;
         }
 
         .topbar {
@@ -360,7 +366,9 @@
         .content-area {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 28px;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* PANELS */
@@ -1389,6 +1397,7 @@
             background: rgba(0, 0, 0, 0.6);
             z-index: 99;
             backdrop-filter: blur(2px);
+            -webkit-tap-highlight-color: transparent;
         }
 
         #sidebarOverlay.open {
@@ -1424,6 +1433,7 @@
 
             .topbar {
                 padding: 0 14px;
+                flex-shrink: 0;
             }
 
             .topbar h2 {
@@ -1443,31 +1453,57 @@
                 position: fixed;
                 left: -320px;
                 top: 0;
-                height: 100vh;
+                height: 100dvh;
                 z-index: 100;
                 transition: left 0.25s ease;
                 box-shadow: 4px 0 20px rgba(0, 0, 0, 0.4);
+                overflow-y: auto;
             }
 
             #sidebar.open {
                 left: 0;
             }
 
-            /* main takes full width */
+            /* ── CORE LAYOUT FIX ──
+         body fills screen, main is a flex column,
+         content-area is the ONLY scrolling element */
+            html,
+            body {
+                height: 100dvh;
+                overflow: hidden;
+            }
+
             body {
                 flex-direction: column;
             }
 
             #main {
                 width: 100%;
-                padding-bottom: 64px;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+                /* critical: lets flex children shrink */
+                overflow: hidden;
             }
 
-            /* room for bottom nav */
-
-            /* content padding */
             .content-area {
-                padding: 16px;
+                flex: 1;
+                /* fills remaining space after topbar */
+                min-height: 0;
+                /* critical: allows scroll inside flex */
+                overflow-y: auto;
+                overflow-x: hidden;
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior: contain;
+                padding: 14px 14px calc(74px + env(safe-area-inset-bottom)) 14px;
+            }
+
+            /* panels must not set their own height */
+            .panel,
+            .panel.active {
+                height: auto;
+                overflow: visible;
             }
 
             /* stats: 2 columns on mobile */
@@ -1482,7 +1518,7 @@
             }
 
             .stat-card {
-                padding: 14px 14px;
+                padding: 14px;
             }
 
             /* search row stacks */
@@ -1498,19 +1534,20 @@
             .table-wrap {
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
+                width: 100%;
             }
 
             table {
-                min-width: 560px;
+                min-width: 520px;
             }
 
             th,
             td {
-                padding: 10px 12px;
+                padding: 9px 10px;
                 font-size: 12px;
             }
 
-            /* hide less important table columns on small screens */
+            /* hide less important columns */
             th:nth-child(4),
             td:nth-child(4),
             th:nth-child(5),
@@ -1547,7 +1584,7 @@
                 grid-template-columns: 1fr;
             }
 
-            /* profile detail header stacks */
+            /* profile detail */
             .profile-detail-header {
                 flex-direction: column;
                 gap: 14px;
@@ -1561,19 +1598,83 @@
                 font-size: 18px;
             }
 
-            /* login box padding */
+            /* timeline cancel button stacks nicely */
+            .timeline-item {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            /* schedule */
+            .sched-week-strip {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 6px;
+                scroll-snap-type: x mandatory;
+                gap: 6px;
+            }
+
+            .sched-day-pill {
+                scroll-snap-align: start;
+                min-width: 52px;
+                padding: 8px 4px;
+            }
+
+            .sched-day-pill .spill-num {
+                font-size: 17px;
+            }
+
+            .sched-slot {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .sched-slot>div:last-child {
+                width: 100%;
+                display: flex;
+                gap: 6px;
+                justify-content: flex-end;
+            }
+
+            /* schedule doctor grid */
+            .sched-doctor-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            /* login */
             .login-box {
                 padding: 28px 20px;
                 margin: 16px;
             }
 
-            /* toast bottom center */
+            /* toast above bottom nav */
             .toast {
                 left: 16px;
                 right: 16px;
                 bottom: 74px;
                 text-align: center;
                 justify-content: center;
+                max-width: none;
+            }
+
+            /* modals slide up from bottom */
+            .modal-overlay {
+                align-items: flex-end;
+                padding: 0;
+            }
+
+            .modal-box {
+                border-radius: 20px 20px 0 0;
+                max-height: 90dvh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: calc(16px + env(safe-area-inset-bottom));
+            }
+
+            /* prevent iOS auto-zoom on input focus */
+            input,
+            select,
+            textarea {
+                font-size: 16px !important;
             }
 
             /* BOTTOM NAV */
@@ -1586,7 +1687,8 @@
                 background: var(--surface);
                 border-top: 1px solid var(--border);
                 z-index: 50;
-                height: 60px;
+                height: calc(60px + env(safe-area-inset-bottom));
+                padding-bottom: env(safe-area-inset-bottom);
             }
 
             .bnav-item {
@@ -1605,6 +1707,8 @@
                 border: none;
                 background: none;
                 font-family: inherit;
+                -webkit-tap-highlight-color: transparent;
+                position: relative;
             }
 
             .bnav-item.active {
@@ -1612,7 +1716,7 @@
             }
 
             .bnav-item .bnav-icon {
-                font-size: 19px;
+                font-size: 18px;
                 line-height: 1;
             }
 
@@ -1626,10 +1730,6 @@
                 font-weight: 700;
                 padding: 1px 5px;
                 border-radius: 10px;
-            }
-
-            .bnav-item {
-                position: relative;
             }
         }
 
@@ -2215,8 +2315,28 @@
                 patients = snapshot.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
                 patients.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
                 setSyncing(false);
+
+                // Always refresh table & stats
                 renderTable();
                 renderStats();
+
+                // Re-render whichever other panel is currently visible
+                const activePanel = document.querySelector('.panel.active');
+                const activePanelId = activePanel ? activePanel.id.replace('panel-', '') : '';
+
+                if (activePanelId === 'doctors') {
+                    renderDoctors();
+                } else if (activePanelId === 'schedule') {
+                    if (schedActiveDoctor) renderSchedWeek();
+                    else renderSchedDoctorPicker();
+                } else if (activePanelId === 'profiles') {
+                    if (editPatientFid && document.getElementById('profileDetail') &&
+                        document.getElementById('profileDetail').style.display !== 'none') {
+                        showProfileDetail(editPatientFid);
+                    } else {
+                        renderProfiles();
+                    }
+                }
             }, err => {
                 console.error(err);
                 toast('Database error: ' + err.message, true);
@@ -2499,7 +2619,7 @@
         };
 
         /* DOCTORS */
-        function renderDoctors() {
+        window.renderDoctors = function renderDoctors() {
             document.getElementById('doctorsGrid').innerHTML = DOCTORS.map((d, i) => {
                 const count = patients.filter(p => p.doctor === d).length;
                 return `<div class="doctor-card">
@@ -2516,13 +2636,16 @@
         let schedWeekOffset = 0;   // 0 = current week, 1 = next week, -1 = last week
         let schedActiveDate = null; // 'YYYY-MM-DD'
 
-        function renderSchedDoctorPicker() {
+        window.renderSchedDoctorPicker = function renderSchedDoctorPicker() {
             const grid = document.getElementById('schedDoctorGrid');
+            if (!grid) return;
+            if (DOCTORS.length === 0) {
+                grid.innerHTML = `<div style="color:var(--text-dim);font-size:13px;">No doctors found.</div>`;
+                return;
+            }
             grid.innerHTML = DOCTORS.map((d, i) => {
-                // Count ALL booked sessions for this doctor across all patients
                 let total = 0;
                 patients.forEach(p => { total += (p.history || []).filter(h => h.doctor === d).length; });
-                // Count upcoming (today or future)
                 const today = toDateStr(new Date());
                 let upcoming = 0;
                 patients.forEach(p => { upcoming += (p.history || []).filter(h => h.doctor === d && h.date >= today).length; });
@@ -2587,7 +2710,7 @@
             });
         }
 
-        function renderSchedWeek() {
+        window.renderSchedWeek = function renderSchedWeek() {
             const days = getWeekDays(schedWeekOffset);
             const today = toDateStr(new Date());
             const strip = document.getElementById('schedWeekStrip');
@@ -2911,19 +3034,21 @@
 
         /* ── BOTTOM NAV ── */
         window.showPanelMobile = (id, el) => {
-            // reuse showPanel but find the matching sidebar nav item too
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.querySelectorAll('.bnav-item').forEach(n => n.classList.remove('active'));
             document.getElementById('panel-' + id).classList.add('active');
             el.classList.add('active');
-            // sync sidebar highlight
-            document.querySelectorAll('.nav-item').forEach(n => { if (n.textContent.trim().toLowerCase().includes(TITLES[id].toLowerCase().split(' ')[0].toLowerCase())) n.classList.add('active'); });
-            document.getElementById('topbarTitle').textContent = TITLES[id];
+            document.querySelectorAll('.nav-item').forEach(n => { if (n.textContent.trim().toLowerCase().includes((TITLES[id] || '').toLowerCase().split(' ')[0].toLowerCase())) n.classList.add('active'); });
+            document.getElementById('topbarTitle').textContent = TITLES[id] || '';
             if (id === 'patients') { renderTable(); renderStats(); }
             if (id === 'doctors') renderDoctors();
             if (id === 'profiles') { closeProfileDetail(); renderProfiles(); }
+            if (id === 'schedule') { closeSchedView(); renderSchedDoctorPicker(); }
             closeSidebar();
+            // Scroll content area back to top on panel switch
+            const ca = document.querySelector('.content-area');
+            if (ca) ca.scrollTop = 0;
         };
 
         // sync bottom nav badge with sidebar badge
@@ -2932,4 +3057,3 @@
 </body>
 
 </html>
-//Comment
