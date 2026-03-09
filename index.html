@@ -2411,14 +2411,19 @@
             if (!booked) {
                 tl.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>No sessions booked yet.</p></div>`;
             } else {
-                tl.innerHTML = (p.history || []).map((h, i) => `
+                const sorted = [...(p.history || [])].sort((a, b) => {
+                    // Sort by date ascending, then by time ascending within same date
+                    if (a.date !== b.date) return a.date.localeCompare(b.date);
+                    return timeToMinutes(a.time) - timeToMinutes(b.time);
+                });
+                tl.innerHTML = sorted.map((h, i) => `
       <div class="timeline-item">
         <div class="tl-dot">📋</div>
         <div class="tl-info">
           <div class="tl-date">${fmtDate(h.date)} &nbsp;·&nbsp; ${fmtTime(h.time)}</div>
           <div class="tl-sub">${h.doctor || p.doctor}${h.sessionType ? ' · <span style="color:var(--purple)">' + h.sessionType + '</span>' : ''}${h.notes ? ' · <em style="color:var(--text-muted)">' + h.notes + '</em>' : ''}</div>
         </div>
-        <div class="tl-num">Session #${booked - i}</div>
+        <div class="tl-num">Session #${i + 1}</div>
       </div>`).join('');
             }
         }
