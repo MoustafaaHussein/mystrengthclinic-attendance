@@ -2295,11 +2295,9 @@
                 document.getElementById('sidebar').style.display = 'flex';
                 document.getElementById('main').style.display = 'flex';
                 document.getElementById('userEmail').textContent = user.email;
-                startListening();
                 populateSelects();
-                renderTable();
-                renderStats();
                 document.getElementById('bookDate').value = new Date().toISOString().split('T')[0];
+                startListening(); // onSnapshot will call all renders once data arrives
             } else {
                 document.getElementById('sidebar').style.display = 'none';
                 document.getElementById('main').style.display = 'none';
@@ -2316,20 +2314,21 @@
                 patients.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
                 setSyncing(false);
 
-                // Always refresh table & stats
+                // Always refresh stats + table
                 renderTable();
                 renderStats();
 
-                // Re-render whichever other panel is currently visible
+                // Always refresh doctors + schedule picker (they're cheap and always need fresh data)
+                renderDoctors();
+                renderSchedDoctorPicker();
+
+                // If schedule is open on a specific doctor, refresh their week too
+                if (schedActiveDoctor) renderSchedWeek();
+
+                // Refresh profiles if open
                 const activePanel = document.querySelector('.panel.active');
                 const activePanelId = activePanel ? activePanel.id.replace('panel-', '') : '';
-
-                if (activePanelId === 'doctors') {
-                    renderDoctors();
-                } else if (activePanelId === 'schedule') {
-                    if (schedActiveDoctor) renderSchedWeek();
-                    else renderSchedDoctorPicker();
-                } else if (activePanelId === 'profiles') {
+                if (activePanelId === 'profiles') {
                     if (editPatientFid && document.getElementById('profileDetail') &&
                         document.getElementById('profileDetail').style.display !== 'none') {
                         showProfileDetail(editPatientFid);
@@ -2337,6 +2336,7 @@
                         renderProfiles();
                     }
                 }
+
             }, err => {
                 console.error(err);
                 toast('Database error: ' + err.message, true);
