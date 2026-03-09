@@ -2416,7 +2416,7 @@
         <div class="tl-dot">📋</div>
         <div class="tl-info">
           <div class="tl-date">${fmtDate(h.date)} &nbsp;·&nbsp; ${fmtTime(h.time)}</div>
-          <div class="tl-sub">${h.doctor || p.doctor}${h.notes ? ' · <em style="color:var(--text-muted)">' + h.notes + '</em>' : ''}</div>
+          <div class="tl-sub">${h.doctor || p.doctor}${h.sessionType ? ' · <span style="color:var(--purple)">' + h.sessionType + '</span>' : ''}${h.notes ? ' · <em style="color:var(--text-muted)">' + h.notes + '</em>' : ''}</div>
         </div>
         <div class="tl-num">Session #${booked - i}</div>
       </div>`).join('');
@@ -2692,11 +2692,13 @@
         document.getElementById('editModal').addEventListener('click', e => {
             if (e.target === document.getElementById('editModal')) closeEditModal();
         });
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
 
+        function toDateStr(d) {
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
 
         /* EXPORT */
         window.exportToCSV = () => {
