@@ -1778,8 +1778,11 @@
                     <div class="profiles-grid" id="profilesContainer"></div>
                 </div>
                 <div id="profileDetail">
-                    <div style="margin-bottom:16px;">
+                    <div
+                        style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
                         <button class="btn btn-ghost btn-sm" onclick="closeProfileDetail()">← Back to Profiles</button>
+                        <button class="btn btn-warning btn-sm" onclick="openEditPatientModal()" id="editPatientBtn">✏️
+                            Edit Patient</button>
                     </div>
                     <div class="profile-detail-header">
                         <div class="profile-detail-avatar" id="detailAvatar">?</div>
@@ -1968,6 +1971,63 @@
 
         </div>
     </div>
+    <!-- EDIT PATIENT MODAL -->
+    <div class="modal-overlay hidden" id="editPatientModal">
+        <div class="modal-box">
+            <h3>✏️ Edit Patient Details</h3>
+            <input type="hidden" id="epFirestoreId">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="epName"
+                    style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
+            </div>
+            <div class="form-group">
+                <label>Mobile Phone</label>
+                <input type="text" id="epPhone"
+                    style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
+            </div>
+            <div class="form-group">
+                <label>Assigned Doctor</label>
+                <select id="epDoctor"
+                    style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;"></select>
+            </div>
+            <div class="form-group">
+                <label>Preferred Slot</label>
+                <select id="epSlot"
+                    style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
+                    <option value="AM">Morning (AM)</option>
+                    <option value="PM">Afternoon (PM)</option>
+                </select>
+            </div>
+            <div style="background:var(--elevated);border-radius:12px;padding:16px;border:1px solid var(--border);">
+                <div
+                    style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-dim);margin-bottom:12px;">
+                    📦 Subscription Update</div>
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label>Total Sessions Subscribed &nbsp;<span id="epSessionsVal"
+                            style="font-size:18px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent);">12</span></label>
+                    <input type="range" min="0" max="48" value="12" id="epSessions"
+                        oninput="document.getElementById('epSessionsVal').textContent=this.value;updateEpSessionsLeft()"
+                        style="width:100%;margin-top:6px;">
+                </div>
+                <div
+                    style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-top:4px;">
+                    <span>Sessions used: <strong id="epUsed" style="color:var(--text);">0</strong></span>
+                    <span>New balance: <strong id="epNewLeft" style="color:var(--success);">12</strong></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Amount Paid (EGP)</label>
+                <input type="number" id="epAmount" min="0"
+                    style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="saveEditPatient()">💾 Save Changes</button>
+                <button class="btn btn-ghost" onclick="closeEditPatientModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- EDIT SESSION MODAL -->
     <div class="modal-overlay hidden" id="editModal">
         <div class="modal-box">
@@ -2394,6 +2454,7 @@
 
         function showProfileDetail(fid) {
             const p = patients.find(x => x.firestoreId === fid); if (!p) return;
+            editPatientFid = fid;  // store for edit modal
             document.getElementById('profilesGrid').style.display = 'none';
             document.getElementById('profileDetail').style.display = 'block';
             const initials = p.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
@@ -2649,6 +2710,77 @@
             showProfileDetail(firestoreId);
             toast(`Session cancelled — 1 session restored to ${p.name} ✅`);
         };
+
+        /* ── EDIT PATIENT ── */
+        let editPatientFid = null;
+
+        window.openEditPatientModal = () => {
+            const fid = document.getElementById('epFirestoreId').value || editPatientFid;
+            // get current firestoreId from the hidden field set by showProfileDetail
+            const p = patients.find(x => x.firestoreId === (editPatientFid));
+            if (!p) return;
+
+            document.getElementById('epName').value = p.name || '';
+            document.getElementById('epPhone').value = p.phone || '';
+            document.getElementById('epAmount').value = p.amount || '';
+            document.getElementById('epSlot').value = p.time || 'AM';
+
+            // Doctor select
+            const docSel = document.getElementById('epDoctor');
+            docSel.innerHTML = DOCTORS.map(d => `<option${d === p.doctor ? ' selected' : ''}>${d}</option>`).join('');
+
+            // Sessions slider
+            const used = (p.history || []).length;
+            const sub = p.subscribed || 0;
+            document.getElementById('epSessions').value = sub;
+            document.getElementById('epSessions').max = Math.max(48, sub + 24);
+            document.getElementById('epSessionsVal').textContent = sub;
+            document.getElementById('epUsed').textContent = used;
+            document.getElementById('epNewLeft').textContent = Math.max(0, sub - used);
+
+            document.getElementById('editPatientModal').classList.remove('hidden');
+        };
+
+        window.updateEpSessionsLeft = () => {
+            const fid = editPatientFid;
+            const p = patients.find(x => x.firestoreId === fid);
+            const used = p ? (p.history || []).length : 0;
+            const newSub = parseInt(document.getElementById('epSessions').value) || 0;
+            const newLeft = Math.max(0, newSub - used);
+            document.getElementById('epNewLeft').textContent = newLeft;
+        };
+
+        window.closeEditPatientModal = () => {
+            document.getElementById('editPatientModal').classList.add('hidden');
+        };
+
+        window.saveEditPatient = async () => {
+            const fid = editPatientFid;
+            const p = patients.find(x => x.firestoreId === fid);
+            if (!p) return;
+
+            const name = document.getElementById('epName').value.trim();
+            const phone = document.getElementById('epPhone').value.trim();
+            const doctor = document.getElementById('epDoctor').value;
+            const slot = document.getElementById('epSlot').value;
+            const amount = document.getElementById('epAmount').value;
+            const newSub = parseInt(document.getElementById('epSessions').value) || 0;
+            const used = (p.history || []).length;
+            const newLeft = Math.max(0, newSub - used);
+
+            if (!name) { toast('Name cannot be empty', true); return; }
+
+            const updated = { ...p, name, phone, doctor, time: slot, amount, subscribed: newSub, sessions: newLeft };
+            await saveToFirestore(updated);
+            closeEditPatientModal();
+            showProfileDetail(fid); // refresh the detail view
+            toast(`${name}'s profile updated ✅`);
+        };
+
+        // Close on overlay click
+        document.getElementById('editPatientModal').addEventListener('click', e => {
+            if (e.target === document.getElementById('editPatientModal')) closeEditPatientModal();
+        });
 
         window.openEditModal = (firestoreId, bookedAt) => {
             const p = patients.find(x => x.firestoreId === firestoreId);
