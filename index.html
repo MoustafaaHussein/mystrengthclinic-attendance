@@ -3053,11 +3053,10 @@
             });
 
             // Group by room
-            const byRoom = { 'Room A': [], 'Room B': [], 'Unassigned': [] };
+            const byRoom = { 'Room A': [], 'Room B': [] };
             allSessions.forEach(s => {
                 if (s.room === 'Room A') byRoom['Room A'].push(s);
                 else if (s.room === 'Room B') byRoom['Room B'].push(s);
-                else byRoom['Unassigned'].push(s);
             });
 
             // Get all unique time slots for timeline
@@ -3107,7 +3106,6 @@
     ${allTimes.map(time => {
                 const rA = allSessions.filter(s => s.room === 'Room A' && s.time === time);
                 const rB = allSessions.filter(s => s.room === 'Room B' && s.time === time);
-                const unassigned = allSessions.filter(s => !s.room && s.time === time);
                 const rACellColor = rA.length ? 'var(--danger-dim)' : 'transparent';
                 const rBCellColor = rB.length ? 'var(--teal-dim)' : 'transparent';
                 return `<div style="display:grid;grid-template-columns:80px 1fr 1fr;border-bottom:1px solid var(--border-soft);">
@@ -3122,11 +3120,6 @@
         </div>
       </div>`;
             }).join('')}
-    ${byRoom['Unassigned'].length ? `
-    <div style="padding:12px 14px;background:var(--warning-dim);border-top:1px solid rgba(245,158,11,0.2);">
-      <div style="font-size:11px;font-weight:700;color:var(--warning);margin-bottom:6px;">⚠️ Unassigned sessions (${byRoom['Unassigned'].length})</div>
-      ${byRoom['Unassigned'].map(s => `<div style="font-size:12px;color:var(--text-dim);">${fmtTime(s.time)} · ${s.patientName} · ${s.doctor}</div>`).join('')}
-    </div>`: ''}
   </div>`;
         };
 
