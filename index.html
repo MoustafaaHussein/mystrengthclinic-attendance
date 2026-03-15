@@ -26,6 +26,8 @@
             --warning-dim: rgba(245, 158, 11, 0.12);
             --purple: #a78bfa;
             --purple-dim: rgba(167, 139, 250, 0.12);
+            --teal: #2dd4bf;
+            --teal-dim: rgba(45, 212, 191, 0.12);
             --text: #e2eaf4;
             --text-dim: #6b83a0;
             --text-muted: #374e6a;
@@ -145,7 +147,7 @@
             margin-top: 4px;
         }
 
-        /* LOADING SPINNER */
+        /* LOADING */
         #loadingScreen {
             position: fixed;
             inset: 0;
@@ -581,6 +583,11 @@
             color: var(--purple);
         }
 
+        .badge-teal {
+            background: var(--teal-dim);
+            color: var(--teal);
+        }
+
         /* BUTTONS */
         .btn {
             padding: 9px 16px;
@@ -654,6 +661,16 @@
 
         .btn-purple:hover {
             background: rgba(167, 139, 250, 0.2);
+        }
+
+        .btn-teal {
+            background: var(--teal-dim);
+            color: var(--teal);
+            border: 1px solid rgba(45, 212, 191, 0.25);
+        }
+
+        .btn-teal:hover {
+            background: rgba(45, 212, 191, 0.2);
         }
 
         .btn-sm {
@@ -1096,7 +1113,7 @@
             border-radius: 10px;
         }
 
-        /* ── EDIT MODAL ── */
+        /* MODAL */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -1139,12 +1156,6 @@
             display: flex;
             gap: 10px;
             margin-top: 4px;
-        }
-
-        @media(max-width:768px) {
-            .modal-box {
-                padding: 20px;
-            }
         }
 
         /* ── SCHEDULE ── */
@@ -1207,7 +1218,6 @@
             flex-shrink: 0;
         }
 
-        /* week strip */
         .sched-week-strip {
             display: flex;
             gap: 8px;
@@ -1281,7 +1291,6 @@
             background: rgba(255, 255, 255, 0.7);
         }
 
-        /* day view */
         .sched-day-view {}
 
         .sched-day-header {
@@ -1364,32 +1373,259 @@
             font-style: italic;
         }
 
-        @media(max-width:768px) {
-            .sched-doctor-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .sched-week-strip {
-                gap: 6px;
-            }
-
-            .sched-day-pill {
-                min-width: 52px;
-                padding: 8px 4px;
-            }
-
-            .sched-day-pill .spill-num {
-                font-size: 17px;
-            }
+        /* ── DAILY OVERVIEW (all doctors) ── */
+        .daily-overview-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
-        @media(max-width:400px) {
-            .sched-doctor-grid {
-                grid-template-columns: 1fr;
-            }
+        .daily-tab {
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-soft);
+            background: var(--card);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-dim);
+            transition: all 0.18s;
         }
 
-        /* ── MOBILE OVERLAY ── */
+        .daily-tab:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .daily-tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .daily-doc-section {
+            background: var(--card);
+            border: 1px solid var(--border-soft);
+            border-radius: 14px;
+            margin-bottom: 14px;
+            overflow: hidden;
+        }
+
+        .daily-doc-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            background: var(--elevated);
+            border-bottom: 1px solid var(--border-soft);
+        }
+
+        .daily-doc-header .dh-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--accent-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .daily-doc-header .dh-name {
+            font-weight: 700;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .daily-doc-header .dh-count {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .daily-session-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--border-soft);
+        }
+
+        .daily-session-row:last-child {
+            border-bottom: none;
+        }
+
+        .dsr-time {
+            font-family: 'DM Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent);
+            min-width: 64px;
+        }
+
+        .dsr-info {
+            flex: 1;
+        }
+
+        .dsr-name {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .dsr-sub {
+            font-size: 11.5px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .daily-no-sessions {
+            padding: 16px 18px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* ── ROOM OCCUPATION ── */
+        .room-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .room-card {
+            background: var(--card);
+            border: 1px solid var(--border-soft);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .room-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-soft);
+        }
+
+        .room-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .room-icon.a {
+            background: var(--accent-glow);
+        }
+
+        .room-icon.b {
+            background: var(--teal-dim);
+        }
+
+        .room-title {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .room-status {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .room-slots {
+            padding: 12px 16px;
+        }
+
+        .room-slot {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+        }
+
+        .room-slot:last-child {
+            margin-bottom: 0;
+        }
+
+        .room-slot.occupied {
+            background: var(--danger-dim);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+        }
+
+        .room-slot.free {
+            background: var(--success-dim);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .rs-time {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            min-width: 58px;
+        }
+
+        .rs-time.occ {
+            color: #fb7185;
+        }
+
+        .rs-time.free {
+            color: #4ade80;
+        }
+
+        .rs-info {
+            flex: 1;
+            font-size: 12px;
+        }
+
+        .rs-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .rs-dot.occ {
+            background: var(--danger);
+        }
+
+        .rs-dot.free {
+            background: var(--success);
+        }
+
+        .room-assign-note {
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 0 16px 12px;
+            font-style: italic;
+        }
+
+        /* room assignment on booking */
+        .physio-warning {
+            background: var(--danger-dim);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 12.5px;
+            color: #fb7185;
+            display: none;
+            margin-top: 10px;
+        }
+
+        .physio-warning.show {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* MOBILE OVERLAY */
         #sidebarOverlay {
             display: none;
             position: fixed;
@@ -1404,7 +1640,6 @@
             display: block;
         }
 
-        /* ── HAMBURGER ── */
         #menuBtn {
             display: none;
             background: none;
@@ -1416,17 +1651,12 @@
             line-height: 1;
         }
 
-        /* ── BOTTOM NAV (mobile only) ── */
         #bottomNav {
             display: none;
         }
 
-        /* ════════════════════════════
-       RESPONSIVE BREAKPOINTS
-    ════════════════════════════ */
+        /* RESPONSIVE */
         @media(max-width:768px) {
-
-            /* show hamburger, hide export in topbar */
             #menuBtn {
                 display: block;
             }
@@ -1448,7 +1678,6 @@
                 display: none;
             }
 
-            /* sidebar slides in as overlay */
             #sidebar {
                 position: fixed;
                 left: -320px;
@@ -1464,9 +1693,6 @@
                 left: 0;
             }
 
-            /* ── CORE LAYOUT FIX ──
-         body fills screen, main is a flex column,
-         content-area is the ONLY scrolling element */
             html,
             body {
                 height: 100dvh;
@@ -1483,15 +1709,12 @@
                 display: flex;
                 flex-direction: column;
                 min-height: 0;
-                /* critical: lets flex children shrink */
                 overflow: hidden;
             }
 
             .content-area {
                 flex: 1;
-                /* fills remaining space after topbar */
                 min-height: 0;
-                /* critical: allows scroll inside flex */
                 overflow-y: auto;
                 overflow-x: hidden;
                 -webkit-overflow-scrolling: touch;
@@ -1499,14 +1722,12 @@
                 padding: 14px 14px calc(74px + env(safe-area-inset-bottom)) 14px;
             }
 
-            /* panels must not set their own height */
             .panel,
             .panel.active {
                 height: auto;
                 overflow: visible;
             }
 
-            /* stats: 2 columns on mobile */
             .stats-row {
                 grid-template-columns: 1fr 1fr;
                 gap: 10px;
@@ -1521,7 +1742,6 @@
                 padding: 14px;
             }
 
-            /* search row stacks */
             .search-row {
                 flex-direction: column;
             }
@@ -1530,7 +1750,6 @@
                 width: 100%;
             }
 
-            /* table: horizontal scroll */
             .table-wrap {
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
@@ -1547,7 +1766,6 @@
                 font-size: 12px;
             }
 
-            /* hide less important columns */
             th:nth-child(4),
             td:nth-child(4),
             th:nth-child(5),
@@ -1555,13 +1773,11 @@
                 display: none;
             }
 
-            /* action buttons smaller */
             .btn-sm {
                 padding: 5px 7px;
                 font-size: 11px;
             }
 
-            /* forms: single column */
             .form-grid {
                 grid-template-columns: 1fr;
             }
@@ -1574,17 +1790,14 @@
                 padding: 16px;
             }
 
-            /* doctors: 2 cols */
             .doctors-grid {
                 grid-template-columns: 1fr 1fr;
             }
 
-            /* profiles: 1 col */
             .profiles-grid {
                 grid-template-columns: 1fr;
             }
 
-            /* profile detail */
             .profile-detail-header {
                 flex-direction: column;
                 gap: 14px;
@@ -1598,13 +1811,11 @@
                 font-size: 18px;
             }
 
-            /* timeline cancel button stacks nicely */
             .timeline-item {
                 flex-wrap: wrap;
                 gap: 10px;
             }
 
-            /* schedule */
             .sched-week-strip {
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
@@ -1635,18 +1846,28 @@
                 justify-content: flex-end;
             }
 
-            /* schedule doctor grid */
             .sched-doctor-grid {
                 grid-template-columns: 1fr 1fr;
             }
 
-            /* login */
+            .room-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .daily-overview-tabs {
+                gap: 6px;
+            }
+
+            .daily-tab {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
             .login-box {
                 padding: 28px 20px;
                 margin: 16px;
             }
 
-            /* toast above bottom nav */
             .toast {
                 left: 16px;
                 right: 16px;
@@ -1656,7 +1877,6 @@
                 max-width: none;
             }
 
-            /* modals slide up from bottom */
             .modal-overlay {
                 align-items: flex-end;
                 padding: 0;
@@ -1670,14 +1890,12 @@
                 padding-bottom: calc(16px + env(safe-area-inset-bottom));
             }
 
-            /* prevent iOS auto-zoom on input focus */
             input,
             select,
             textarea {
                 font-size: 16px !important;
             }
 
-            /* BOTTOM NAV */
             #bottomNav {
                 display: flex;
                 position: fixed;
@@ -1700,7 +1918,7 @@
                 gap: 3px;
                 cursor: pointer;
                 color: var(--text-muted);
-                font-size: 10px;
+                font-size: 9px;
                 font-weight: 600;
                 transition: color 0.18s;
                 padding: 6px 2px;
@@ -1716,7 +1934,7 @@
             }
 
             .bnav-item .bnav-icon {
-                font-size: 18px;
+                font-size: 17px;
                 line-height: 1;
             }
 
@@ -1749,27 +1967,27 @@
             .profile-stats {
                 grid-template-columns: 1fr 1fr;
             }
+
+            .room-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <!-- LOADING -->
     <div id="loadingScreen">
         <div class="spinner"></div>
         <div class="loading-text">Connecting to database…</div>
     </div>
-
-    <!-- SIDEBAR OVERLAY (mobile) -->
     <div id="sidebarOverlay" onclick="closeSidebar()"></div>
 
     <!-- LOGIN -->
     <div id="loginScreen" class="hidden">
         <div class="login-box">
             <div class="login-logo">
-                <div class="logo-icon">🏥</div>
-                <span>Clinic Pro</span>
+                <div class="logo-icon">🏥</div><span>Clinic Pro</span>
             </div>
             <div class="login-title">Sign in to access the clinic dashboard</div>
             <input type="email" id="loginEmail" placeholder="Email address" autocomplete="email" />
@@ -1784,8 +2002,7 @@
     <!-- SIDEBAR -->
     <div id="sidebar" style="display:none;">
         <div class="sidebar-logo">
-            <div class="logo-icon">🏥</div>
-            <span>Clinic Pro</span>
+            <div class="logo-icon">🏥</div><span>Clinic Pro</span>
         </div>
         <div class="sidebar-user">
             <div class="user-dot"></div>
@@ -1793,26 +2010,22 @@
         </div>
         <div class="sidebar-nav">
             <div class="nav-label">Management</div>
-            <div class="nav-item active" onclick="showPanel('patients',this)">
-                <span class="nav-icon">👥</span> Patients List
-                <span class="nav-badge" id="lowBadge" style="display:none">0</span>
+            <div class="nav-item active" onclick="showPanel('patients',this)"><span class="nav-icon">👥</span> Patients
+                List<span class="nav-badge" id="lowBadge" style="display:none">0</span></div>
+            <div class="nav-item" onclick="showPanel('profiles',this)"><span class="nav-icon">🪪</span> Patient Profiles
             </div>
-            <div class="nav-item" onclick="showPanel('profiles',this)">
-                <span class="nav-icon">🪪</span> Patient Profiles
+            <div class="nav-item" onclick="showPanel('booking',this)"><span class="nav-icon">📅</span> Book a Session
             </div>
-            <div class="nav-item" onclick="showPanel('booking',this)">
-                <span class="nav-icon">📅</span> Book a Session
+            <div class="nav-item" onclick="showPanel('add',this)"><span class="nav-icon">➕</span> Add New Patient</div>
+            <div class="nav-label">Clinic</div>
+            <div class="nav-item" onclick="showPanel('schedule',this)"><span class="nav-icon">🗓️</span> Schedule</div>
+            <div class="nav-item" onclick="showPanel('daily',this)"><span class="nav-icon">📋</span> Daily Overview
             </div>
-            <div class="nav-item" onclick="showPanel('add',this)">
-                <span class="nav-icon">➕</span> Add New Patient
-            </div>
-            <div class="nav-item" onclick="showPanel('schedule',this)">
-                <span class="nav-icon">🗓️</span> Schedule
+            <div class="nav-item" onclick="showPanel('rooms',this)"><span class="nav-icon">🏠</span> Room Occupation
             </div>
             <div class="nav-label">Team</div>
-            <div class="nav-item" onclick="showPanel('doctors',this)">
-                <span class="nav-icon">🩺</span> Associated Doctors
-            </div>
+            <div class="nav-item" onclick="showPanel('doctors',this)"><span class="nav-icon">🩺</span> Associated
+                Doctors</div>
         </div>
         <div class="sidebar-bottom">
             <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;" onclick="doLogout()">🚪 Sign
@@ -1839,11 +2052,8 @@
             <div class="panel active" id="panel-patients">
                 <div class="stats-row" id="statsRow"></div>
                 <div class="search-row">
-                    <div class="search-wrap">
-                        <span class="search-icon">🔍</span>
-                        <input type="text" id="searchInput" oninput="renderTable()"
-                            placeholder="Search by name or phone…">
-                    </div>
+                    <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchInput"
+                            oninput="renderTable()" placeholder="Search by name or phone…"></div>
                     <select class="filter-sel" id="doctorFilter" onchange="renderTable()">
                         <option value="">All Doctors</option>
                     </select>
@@ -1869,11 +2079,8 @@
             <div class="panel" id="panel-profiles">
                 <div id="profilesGrid">
                     <div class="search-row">
-                        <div class="search-wrap">
-                            <span class="search-icon">🔍</span>
-                            <input type="text" id="profileSearch" oninput="renderProfiles()"
-                                placeholder="Search profiles…">
-                        </div>
+                        <div class="search-wrap"><span class="search-icon">🔍</span><input type="text"
+                                id="profileSearch" oninput="renderProfiles()" placeholder="Search profiles…"></div>
                     </div>
                     <div class="profiles-grid" id="profilesContainer"></div>
                 </div>
@@ -1966,7 +2173,7 @@
                         </div>
                         <div class="form-group full"><label>Session Date</label><input type="date" id="bookDate"></div>
                         <div class="form-group full"><label>Session Type</label>
-                            <select id="bookType">
+                            <select id="bookType" onchange="checkPhysioSlot()">
                                 <option value="">Select session type…</option>
                                 <option value="Physiotherapy">Physiotherapy</option>
                                 <option value="Rehabilitation">Rehabilitation</option>
@@ -1975,6 +2182,22 @@
                                 <option value="Half Body Recovery">Half Body Recovery</option>
                                 <option value="Full Body Recovery">Full Body Recovery</option>
                             </select>
+                        </div>
+                        <!-- Physio warning -->
+                        <div class="form-group full">
+                            <div class="physio-warning" id="physioWarning">⚠️ <span id="physioWarningText">Physiotherapy
+                                    slots full at this time.</span></div>
+                        </div>
+                        <!-- Room assignment -->
+                        <div class="form-group full" id="roomAssignGroup" style="display:none;">
+                            <label>Assign Room</label>
+                            <select id="bookRoom"
+                                style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
+                                <option value="">Auto-assign</option>
+                                <option value="Room A">Room A</option>
+                                <option value="Room B">Room B</option>
+                            </select>
+                            <div id="roomAvailInfo" style="font-size:12px;color:var(--text-dim);margin-top:4px;"></div>
                         </div>
                         <div class="form-group full"><label>Notes (optional)</label><input type="text" id="bookNotes"
                                 placeholder="Any extra notes…"></div>
@@ -2029,17 +2252,20 @@
                 </div>
             </div>
 
-            <!-- SCHEDULE -->
+            <!-- SCHEDULE (per doctor) -->
             <div class="panel" id="panel-schedule">
-                <!-- Doctor picker -->
                 <div id="schedDoctorPicker">
                     <div style="margin-bottom:18px;">
                         <div style="font-size:13px;color:var(--text-dim);margin-bottom:14px;">Select a doctor to view
                             their schedule:</div>
-                        <div class="sched-doctor-grid" id="schedDoctorGrid"></div>
+                        <div class="sched-doctor-grid" id="schedDoctorGrid">
+                            <div
+                                style="color:var(--text-muted);font-size:13px;display:flex;align-items:center;gap:8px;">
+                                <div class="spinner" style="width:16px;height:16px;border-width:2px;"></div> Loading…
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <!-- Schedule view -->
                 <div id="schedView" style="display:none;">
                     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
                         <button class="btn btn-ghost btn-sm" onclick="closeSchedView()">← Doctors</button>
@@ -2057,10 +2283,34 @@
                             <button class="btn btn-ghost btn-sm" onclick="shiftSchedWeek(1)">▶</button>
                         </div>
                     </div>
-                    <!-- Week strip -->
                     <div class="sched-week-strip" id="schedWeekStrip"></div>
-                    <!-- Day sessions -->
                     <div class="sched-day-view" id="schedDayView"></div>
+                </div>
+            </div>
+
+            <!-- DAILY OVERVIEW (all doctors for a day) -->
+            <div class="panel" id="panel-daily">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+                    <h3 style="font-size:16px;font-weight:700;flex:1;">📋 Daily Overview — All Doctors</h3>
+                    <input type="date" id="dailyDate" onchange="renderDailyOverview()"
+                        style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:10px;font-size:13.5px;font-family:inherit;">
+                </div>
+                <div class="daily-overview-tabs" id="dailyTabs"></div>
+                <div id="dailyContent"></div>
+            </div>
+
+            <!-- ROOM OCCUPATION -->
+            <div class="panel" id="panel-rooms">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+                    <h3 style="font-size:16px;font-weight:700;flex:1;">🏠 Room Occupation</h3>
+                    <input type="date" id="roomDate" onchange="renderRoomOccupation()"
+                        style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:10px;font-size:13.5px;font-family:inherit;">
+                </div>
+                <div class="room-grid" id="roomGrid"></div>
+                <div style="margin-top:8px;">
+                    <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-dim);">📊 Full Day
+                        Timeline</div>
+                    <div id="roomTimeline"></div>
                 </div>
             </div>
 
@@ -2071,34 +2321,26 @@
 
         </div>
     </div>
+
     <!-- EDIT PATIENT MODAL -->
     <div class="modal-overlay hidden" id="editPatientModal">
         <div class="modal-box">
             <h3>✏️ Edit Patient Details</h3>
             <input type="hidden" id="epFirestoreId">
-            <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" id="epName"
+            <div class="form-group"><label>Full Name</label><input type="text" id="epName"
                     style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
             </div>
-            <div class="form-group">
-                <label>Mobile Phone</label>
-                <input type="text" id="epPhone"
+            <div class="form-group"><label>Mobile Phone</label><input type="text" id="epPhone"
                     style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
             </div>
-            <div class="form-group">
-                <label>Assigned Doctor</label>
-                <select id="epDoctor"
+            <div class="form-group"><label>Assigned Doctor</label><select id="epDoctor"
                     style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;"></select>
             </div>
-            <div class="form-group">
-                <label>Preferred Slot</label>
-                <select id="epSlot"
+            <div class="form-group"><label>Preferred Slot</label><select id="epSlot"
                     style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
                     <option value="AM">Morning (AM)</option>
                     <option value="PM">Afternoon (PM)</option>
-                </select>
-            </div>
+                </select></div>
             <div style="background:var(--elevated);border-radius:12px;padding:16px;border:1px solid var(--border);">
                 <div
                     style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-dim);margin-bottom:12px;">
@@ -2116,9 +2358,7 @@
                     <span>New balance: <strong id="epNewLeft" style="color:var(--success);">12</strong></span>
                 </div>
             </div>
-            <div class="form-group">
-                <label>Amount Paid (EGP)</label>
-                <input type="number" id="epAmount" min="0"
+            <div class="form-group"><label>Amount Paid (EGP)</label><input type="number" id="epAmount" min="0"
                     style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
             </div>
             <div class="modal-actions">
@@ -2134,13 +2374,10 @@
             <h3>✏️ Edit Session</h3>
             <input type="hidden" id="editFirestoreId">
             <input type="hidden" id="editBookedAt">
-            <div class="form-group">
-                <label>Session Date</label>
-                <input type="date" id="editDate"
+            <div class="form-group"><label>Session Date</label><input type="date" id="editDate"
                     style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
             </div>
-            <div class="form-group">
-                <label>Session Time</label>
+            <div class="form-group"><label>Session Time</label>
                 <div style="display:flex;gap:8px;">
                     <select id="editHour"
                         style="flex:1;background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 10px;border-radius:10px;font-size:13.5px;font-family:inherit;">
@@ -2171,13 +2408,10 @@
                     </select>
                 </div>
             </div>
-            <div class="form-group">
-                <label>Doctor</label>
-                <select id="editDoctor"
+            <div class="form-group"><label>Doctor</label><select id="editDoctor"
                     style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;"></select>
             </div>
-            <div class="form-group">
-                <label>Session Type</label>
+            <div class="form-group"><label>Session Type</label>
                 <select id="editType"
                     style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
                     <option value="">No type</option>
@@ -2189,9 +2423,15 @@
                     <option value="Full Body Recovery">Full Body Recovery</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>Notes</label>
-                <input type="text" id="editNotes" placeholder="Optional notes…"
+            <div class="form-group"><label>Room</label>
+                <select id="editRoom"
+                    style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
+                    <option value="">No room assigned</option>
+                    <option value="Room A">Room A</option>
+                    <option value="Room B">Room B</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Notes</label><input type="text" id="editNotes" placeholder="Optional notes…"
                     style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
             </div>
             <div class="modal-actions">
@@ -2203,47 +2443,30 @@
 
     <div class="toast" id="toast"></div>
 
-    <!-- BOTTOM NAV (mobile) -->
+    <!-- BOTTOM NAV -->
     <div id="bottomNav">
-        <button class="bnav-item active" id="bnav-patients" onclick="showPanelMobile('patients',this)">
-            <span class="bnav-icon">👥</span>
-            <span>Patients</span>
-            <span class="bnav-badge" id="bnavBadge" style="display:none">0</span>
-        </button>
-        <button class="bnav-item" id="bnav-profiles" onclick="showPanelMobile('profiles',this)">
-            <span class="bnav-icon">🪪</span>
-            <span>Profiles</span>
-        </button>
-        <button class="bnav-item" id="bnav-booking" onclick="showPanelMobile('booking',this)">
-            <span class="bnav-icon">📅</span>
-            <span>Book</span>
-        </button>
-        <button class="bnav-item" id="bnav-add" onclick="showPanelMobile('add',this)">
-            <span class="bnav-icon">➕</span>
-            <span>Add</span>
-        </button>
-        <button class="bnav-item" id="bnav-schedule" onclick="showPanelMobile('schedule',this)">
-            <span class="bnav-icon">🗓️</span>
-            <span>Schedule</span>
-        </button>
-        <button class="bnav-item" id="bnav-doctors" onclick="showPanelMobile('doctors',this)">
-            <span class="bnav-icon">🩺</span>
-            <span>Doctors</span>
-        </button>
+        <button class="bnav-item active" id="bnav-patients" onclick="showPanelMobile('patients',this)"><span
+                class="bnav-icon">👥</span><span>Patients</span><span class="bnav-badge" id="bnavBadge"
+                style="display:none">0</span></button>
+        <button class="bnav-item" id="bnav-profiles" onclick="showPanelMobile('profiles',this)"><span
+                class="bnav-icon">🪪</span><span>Profiles</span></button>
+        <button class="bnav-item" id="bnav-booking" onclick="showPanelMobile('booking',this)"><span
+                class="bnav-icon">📅</span><span>Book</span></button>
+        <button class="bnav-item" id="bnav-schedule" onclick="showPanelMobile('schedule',this)"><span
+                class="bnav-icon">🗓️</span><span>Schedule</span></button>
+        <button class="bnav-item" id="bnav-daily" onclick="showPanelMobile('daily',this)"><span
+                class="bnav-icon">📋</span><span>Daily</span></button>
+        <button class="bnav-item" id="bnav-rooms" onclick="showPanelMobile('rooms',this)"><span
+                class="bnav-icon">🏠</span><span>Rooms</span></button>
     </div>
 
-    <!-- FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
             from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import {
-            getFirestore, collection, doc, onSnapshot,
-            setDoc, deleteDoc, updateDoc
-        }
+        import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc }
             from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        /* ── CONFIG ── */
         const firebaseConfig = {
             apiKey: "AIzaSyDe4BRi8_Jd20YID4orh1vebCAWuHAKGp4",
             authDomain: "my-strength-clinic-c0c79.firebaseapp.com",
@@ -2260,11 +2483,16 @@
 
         const DOCTORS = ["Dr. Youssef", "Dr. Hadeer", "Dr. Hamdoon", "Dr. Abdullah", "Dr. Habiba", "Dr. Ahmed Yehia", "Dr. Habiba Saied", "Dr. Yehia Sadek", "Dr. Zeyad Ramzy"];
         const DOCTOR_EMOJIS = ["👨‍⚕️", "👩‍⚕️", "👨‍⚕️", "👨‍⚕️", "👩‍⚕️", "👨‍⚕️", "👩‍⚕️", "👨‍⚕️", "👨‍⚕️"];
-        const TITLES = { patients: 'Patients List', profiles: 'Patient Profiles', booking: 'Book a Session', add: 'Add New Patient', doctors: 'Associated Doctors', schedule: 'Schedule' };
+        const PHYSIO_MAX = 2; // max simultaneous physiotherapy sessions clinic-wide
+        const TITLES = { patients: 'Patients List', profiles: 'Patient Profiles', booking: 'Book a Session', add: 'Add New Patient', doctors: 'Associated Doctors', schedule: 'Schedule', daily: 'Daily Overview', rooms: 'Room Occupation' };
 
         let patients = [];
         let bookingPatientId = null;
         let unsubscribe = null;
+        let schedActiveDoctor = null;
+        let schedWeekOffset = 0;
+        let schedActiveDate = null;
+        let editPatientFid = null;
 
         /* ── AUTH ── */
         window.doLogin = async () => {
@@ -2272,21 +2500,11 @@
             const pass = document.getElementById('loginPassword').value;
             const errEl = document.getElementById('loginErr');
             errEl.textContent = '';
-            try {
-                await signInWithEmailAndPassword(auth, email, pass);
-            } catch (e) {
-                errEl.textContent = 'Invalid email or password. Try again.';
-            }
+            try { await signInWithEmailAndPassword(auth, email, pass); }
+            catch (e) { errEl.textContent = 'Invalid email or password. Try again.'; }
         };
-
-        window.doLogout = async () => {
-            if (unsubscribe) unsubscribe();
-            await signOut(auth);
-        };
-
-        document.getElementById('loginPassword').addEventListener('keydown', e => {
-            if (e.key === 'Enter') window.doLogin();
-        });
+        window.doLogout = async () => { if (unsubscribe) unsubscribe(); await signOut(auth); };
+        document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') window.doLogin(); });
 
         onAuthStateChanged(auth, user => {
             document.getElementById('loadingScreen').classList.add('hidden');
@@ -2296,8 +2514,10 @@
                 document.getElementById('main').style.display = 'flex';
                 document.getElementById('userEmail').textContent = user.email;
                 populateSelects();
-                document.getElementById('bookDate').value = new Date().toISOString().split('T')[0];
-                startListening(); // onSnapshot will call all renders once data arrives
+                document.getElementById('bookDate').value = toDateStr(new Date());
+                document.getElementById('dailyDate').value = toDateStr(new Date());
+                document.getElementById('roomDate').value = toDateStr(new Date());
+                startListening();
             } else {
                 document.getElementById('sidebar').style.display = 'none';
                 document.getElementById('main').style.display = 'none';
@@ -2306,62 +2526,35 @@
             }
         });
 
-        /* ── FIRESTORE REAL-TIME LISTENER ── */
+        /* ── FIRESTORE ── */
         function startListening() {
             setSyncing(true);
             unsubscribe = onSnapshot(collection(db, 'patients'), snapshot => {
                 patients = snapshot.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
                 patients.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
                 setSyncing(false);
-
-                // Always refresh stats + table
-                renderTable();
-                renderStats();
-
-                // Always refresh doctors + schedule picker (they're cheap and always need fresh data)
-                renderDoctors();
-                renderSchedDoctorPicker();
-
-                // If schedule is open on a specific doctor, refresh their week too
+                renderTable(); renderStats();
+                renderDoctors(); renderSchedDoctorPicker();
                 if (schedActiveDoctor) renderSchedWeek();
-
-                // Refresh profiles if open
-                const activePanel = document.querySelector('.panel.active');
-                const activePanelId = activePanel ? activePanel.id.replace('panel-', '') : '';
-                if (activePanelId === 'profiles') {
-                    if (editPatientFid && document.getElementById('profileDetail') &&
-                        document.getElementById('profileDetail').style.display !== 'none') {
+                // refresh daily & room if open
+                const aid = (document.querySelector('.panel.active') || {}).id || '';
+                if (aid === 'panel-daily') renderDailyOverview();
+                if (aid === 'panel-rooms') renderRoomOccupation();
+                if (aid === 'panel-profiles') {
+                    if (editPatientFid && document.getElementById('profileDetail').style.display !== 'none')
                         showProfileDetail(editPatientFid);
-                    } else {
-                        renderProfiles();
-                    }
+                    else renderProfiles();
                 }
-
-            }, err => {
-                console.error(err);
-                toast('Database error: ' + err.message, true);
-                setSyncing(false);
-            });
+            }, err => { toast('Database error: ' + err.message, true); setSyncing(false); });
         }
 
-        function setSyncing(s) {
-            const dot = document.getElementById('syncDot');
-            const text = document.getElementById('syncText');
-            if (s) { dot.classList.add('syncing'); text.textContent = 'Syncing…'; }
-            else { dot.classList.remove('syncing'); text.textContent = 'Live'; }
-        }
-
-        /* ── SAVE / DELETE ── */
         async function saveToFirestore(p) {
             setSyncing(true);
             const { firestoreId, ...data } = p;
             await setDoc(doc(db, 'patients', firestoreId || p.id.toString()), data);
         }
-
-        async function deleteFromFirestore(firestoreId) {
-            setSyncing(true);
-            await deleteDoc(doc(db, 'patients', firestoreId));
-        }
+        async function deleteFromFirestore(fid) { setSyncing(true); await deleteDoc(doc(db, 'patients', fid)); }
+        function setSyncing(s) { const d = document.getElementById('syncDot'), t = document.getElementById('syncText'); if (s) { d.classList.add('syncing'); t.textContent = 'Syncing…'; } else { d.classList.remove('syncing'); t.textContent = 'Live'; } }
 
         /* ── UI ── */
         window.showPanel = (id, el) => {
@@ -2370,14 +2563,15 @@
             document.querySelectorAll('.bnav-item').forEach(n => n.classList.remove('active'));
             document.getElementById('panel-' + id).classList.add('active');
             el.classList.add('active');
-            // sync bottom nav
             const bnavEl = document.getElementById('bnav-' + id);
             if (bnavEl) bnavEl.classList.add('active');
-            document.getElementById('topbarTitle').textContent = TITLES[id];
+            document.getElementById('topbarTitle').textContent = TITLES[id] || id;
             if (id === 'patients') { renderTable(); renderStats(); }
             if (id === 'doctors') renderDoctors();
             if (id === 'profiles') { closeProfileDetail(); renderProfiles(); }
             if (id === 'schedule') { closeSchedView(); renderSchedDoctorPicker(); }
+            if (id === 'daily') renderDailyOverview();
+            if (id === 'rooms') renderRoomOccupation();
             closeSidebar();
         };
 
@@ -2390,30 +2584,23 @@
         }
 
         /* STATS */
-        window.renderStats = function renderStats() {
-            const total = patients.length;
-            const low = patients.filter(p => p.sessions > 0 && p.sessions <= 2).length;
-            const empty = patients.filter(p => p.sessions === 0).length;
-            const subs = patients.reduce((a, p) => a + (p.subscribed || 0), 0);
+        window.renderStats = function () {
+            const total = patients.length, low = patients.filter(p => p.sessions > 0 && p.sessions <= 2).length,
+                empty = patients.filter(p => p.sessions === 0).length, subs = patients.reduce((a, p) => a + (p.subscribed || 0), 0);
             document.getElementById('statsRow').innerHTML = `
     <div class="stat-card"><div class="stat-label">Total Patients</div><div class="stat-value" style="color:var(--accent)">${total}</div><div class="stat-sub">registered</div></div>
     <div class="stat-card"><div class="stat-label">Sessions Low</div><div class="stat-value" style="color:var(--warning)">${low}</div><div class="stat-sub">≤ 2 sessions left</div></div>
     <div class="stat-card"><div class="stat-label">No Sessions</div><div class="stat-value" style="color:var(--danger)">${empty}</div><div class="stat-sub">need renewal</div></div>
     <div class="stat-card"><div class="stat-label">Total Subscribed</div><div class="stat-value" style="color:var(--success)">${subs}</div><div class="stat-sub">across all patients</div></div>`;
-            const badge = document.getElementById('lowBadge');
             const cnt = low + empty;
-            badge.textContent = cnt;
-            badge.style.display = cnt > 0 ? '' : 'none';
-            // sync bottom nav badge
-            const bb = document.getElementById('bnavBadge');
-            if (bb) { bb.textContent = cnt; bb.style.display = cnt > 0 ? '' : 'none'; }
-        }
+            document.getElementById('lowBadge').textContent = cnt; document.getElementById('lowBadge').style.display = cnt > 0 ? '' : 'none';
+            const bb = document.getElementById('bnavBadge'); if (bb) { bb.textContent = cnt; bb.style.display = cnt > 0 ? '' : 'none'; }
+        };
 
         /* TABLE */
-        window.renderTable = function renderTable() {
+        window.renderTable = function () {
             renderStats();
-            const q = document.getElementById('searchInput').value.toLowerCase();
-            const df = document.getElementById('doctorFilter').value;
+            const q = document.getElementById('searchInput').value.toLowerCase(), df = document.getElementById('doctorFilter').value;
             const filtered = patients.filter(p => (p.name.toLowerCase().includes(q) || (p.phone || '').includes(q)) && (!df || p.doctor === df));
             const body = document.getElementById('patientBody');
             if (!filtered.length) { body.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">🔍</div><p>No patients found</p></div></td></tr>`; return; }
@@ -2432,47 +2619,95 @@
         <button class="btn btn-danger btn-sm" onclick="deletePatient('${p.firestoreId}')">✕</button>
       </td></tr>`;
             }).join('');
-        }
+        };
 
         window.updateSession = async (fid, delta) => {
             const p = patients.find(x => x.firestoreId === fid); if (!p) return;
             if (delta === -1 && p.sessions <= 0) { toast('No sessions left for ' + p.name, true); return; }
             if (delta === 1 && p.sessions >= (p.subscribed || 0)) { toast('Already at max sessions', true); return; }
-            const updated = { ...p, sessions: p.sessions + delta };
-            await saveToFirestore(updated);
+            await saveToFirestore({ ...p, sessions: p.sessions + delta });
         };
-
-        window.deletePatient = async (fid) => {
-            if (!confirm('Delete this patient?')) return;
-            await deleteFromFirestore(fid);
-        };
+        window.deletePatient = async (fid) => { if (!confirm('Delete this patient?')) return; await deleteFromFirestore(fid); };
 
         /* ADD PATIENT */
         window.savePatient = async () => {
-            const name = document.getElementById('pName').value.trim();
-            const phone = document.getElementById('pPhone').value.trim();
-            const doctor = document.getElementById('pDoctor').value;
-            const sessions = parseInt(document.getElementById('pSessions').value) || 0;
-            const amount = document.getElementById('pAmount').value;
-            const time = document.getElementById('pTime').value;
+            const name = document.getElementById('pName').value.trim(), phone = document.getElementById('pPhone').value.trim(),
+                doctor = document.getElementById('pDoctor').value, sessions = parseInt(document.getElementById('pSessions').value) || 0,
+                amount = document.getElementById('pAmount').value, time = document.getElementById('pTime').value;
             if (!name) { toast('Please enter a patient name', true); return; }
             if (!doctor) { toast('Please select a doctor', true); return; }
             const newP = { id: Date.now(), name, phone, doctor, sessions, subscribed: sessions, amount, time, history: [] };
-            await saveToFirestore(newP);
-            clearAddForm();
-            toast('Patient "' + name + '" added ✅');
+            await saveToFirestore(newP); clearAddForm(); toast(`Patient "${name}" added ✅`);
+        };
+        window.clearAddForm = () => { ['pName', 'pPhone', 'pAmount'].forEach(id => document.getElementById(id).value = ''); document.getElementById('pSessions').value = 12; document.getElementById('sessVal').textContent = 12; };
+
+        /* ── PHYSIO SLOT CHECK ── */
+        function getPhysioCountAtSlot(date, time, excludeBookedAt = null) {
+            // Count how many physio sessions across ALL doctors are at the exact same date+time
+            let count = 0;
+            patients.forEach(p => {
+                (p.history || []).forEach(h => {
+                    if (h.bookedAt === excludeBookedAt) return;
+                    if (h.date === date && h.time === time && h.sessionType === 'Physiotherapy') count++;
+                });
+            });
+            return count;
+        }
+
+        window.checkPhysioSlot = () => {
+            const sType = document.getElementById('bookType').value;
+            const warning = document.getElementById('physioWarning');
+            const roomGroup = document.getElementById('roomAssignGroup');
+            // Show room assignment for physio sessions
+            if (sType === 'Physiotherapy' || sType === 'Rehabilitation' || sType === 'Assessment' ||
+                sType === 'Re-Assessment' || sType === 'Half Body Recovery' || sType === 'Full Body Recovery') {
+                roomGroup.style.display = 'block';
+                updateRoomAvailInfo();
+            } else {
+                roomGroup.style.display = 'none';
+            }
+            if (sType !== 'Physiotherapy') { warning.classList.remove('show'); return; }
+            const date = document.getElementById('bookDate').value;
+            const hour = document.getElementById('bookHour').value, min = document.getElementById('bookMin').value, ampm = document.getElementById('bookAmPm').value;
+            const time = `${hour}:${min} ${ampm}`;
+            if (!date) { warning.classList.remove('show'); return; }
+            const count = getPhysioCountAtSlot(date, time);
+            if (count >= PHYSIO_MAX) {
+                document.getElementById('physioWarningText').textContent = `⚠️ Physiotherapy slots are FULL at ${time} on this date (${count}/${PHYSIO_MAX} slots used). Please choose a different time.`;
+                warning.classList.add('show');
+            } else if (count > 0) {
+                document.getElementById('physioWarningText').textContent = `ℹ️ ${count}/${PHYSIO_MAX} physiotherapy slots used at ${time}. ${PHYSIO_MAX - count} slot(s) remaining.`;
+                warning.classList.add('show');
+            } else {
+                warning.classList.remove('show');
+            }
         };
 
-        window.clearAddForm = () => {
-            ['pName', 'pPhone', 'pAmount'].forEach(id => document.getElementById(id).value = '');
-            document.getElementById('pSessions').value = 12;
-            document.getElementById('sessVal').textContent = 12;
-        };
+        function updateRoomAvailInfo() {
+            const date = document.getElementById('bookDate').value;
+            const hour = document.getElementById('bookHour').value, min = document.getElementById('bookMin').value, ampm = document.getElementById('bookAmPm').value;
+            const time = `${hour}:${min} ${ampm}`;
+            if (!date) { document.getElementById('roomAvailInfo').textContent = ''; return; }
+            const roomA = getRoomOccupiedAt('Room A', date, time);
+            const roomB = getRoomOccupiedAt('Room B', date, time);
+            const aStatus = roomA ? `Room A: 🔴 Occupied (${roomA})` : 'Room A: 🟢 Free';
+            const bStatus = roomB ? `Room B: 🔴 Occupied (${roomB})` : 'Room B: 🟢 Free';
+            document.getElementById('roomAvailInfo').textContent = `${aStatus}   ${bStatus}`;
+        }
+
+        function getRoomOccupiedAt(room, date, time, excludeBookedAt = null) {
+            for (const p of patients) {
+                for (const h of (p.history || [])) {
+                    if (h.bookedAt === excludeBookedAt) continue;
+                    if (h.room === room && h.date === date && h.time === time) return p.name;
+                }
+            }
+            return null;
+        }
 
         /* BOOKING */
         window.filterBookingList = () => {
-            const q = document.getElementById('bookSearch').value.toLowerCase();
-            const dd = document.getElementById('ptDropdown');
+            const q = document.getElementById('bookSearch').value.toLowerCase(), dd = document.getElementById('ptDropdown');
             if (!q) { dd.classList.remove('open'); return; }
             const matches = patients.filter(p => p.name.toLowerCase().includes(q) || (p.phone || '').includes(q));
             if (!matches.length) { dd.innerHTML = '<div class="pt-option"><div class="pt-opt-name" style="color:var(--text-muted)">No patients found</div></div>'; dd.classList.add('open'); return; }
@@ -2494,54 +2729,67 @@
             document.getElementById('selPtInfo').textContent = (p.phone || '—') + ' · ' + p.doctor + ' · ' + (p.time || '—');
             document.getElementById('selPtSessions').textContent = p.sessions;
             document.getElementById('selectedPatientInfo').style.display = 'block';
+            checkPhysioSlot();
         };
 
         window.confirmBooking = async () => {
             if (!bookingPatientId) { toast('Please select a patient first', true); return; }
-            const hour = document.getElementById('bookHour').value;
-            const min = document.getElementById('bookMin').value;
-            const ampm = document.getElementById('bookAmPm').value;
+            const hour = document.getElementById('bookHour').value, min = document.getElementById('bookMin').value, ampm = document.getElementById('bookAmPm').value;
             const time = `${hour}:${min} ${ampm}`;
             const date = document.getElementById('bookDate').value;
             const notes = document.getElementById('bookNotes').value.trim();
             const sType = document.getElementById('bookType').value;
             const doctor = document.getElementById('bookDoctor').value;
+            const room = document.getElementById('bookRoom').value;
             if (!date) { toast('Please select a date', true); return; }
             if (!sType) { toast('Please select a session type', true); return; }
+
+            // Physio slot enforcement
+            if (sType === 'Physiotherapy') {
+                const count = getPhysioCountAtSlot(date, time);
+                if (count >= PHYSIO_MAX) { toast(`Physiotherapy slots are full at ${time}! Max ${PHYSIO_MAX} allowed.`, true); return; }
+            }
+
             const p = patients.find(x => x.firestoreId === bookingPatientId);
             if (p.sessions <= 0) { toast('No sessions left for ' + p.name, true); return; }
-            const newHistory = [{ date, time, doctor: doctor || p.doctor, notes, sessionType: sType, bookedAt: Date.now() }, ...(p.history || [])];
+
+            const entry = { date, time, doctor: doctor || p.doctor, notes, sessionType: sType, bookedAt: Date.now() };
+            if (room) entry.room = room;
+
+            const newHistory = [entry, ...(p.history || [])];
             const updated = { ...p, sessions: p.sessions - 1, history: newHistory };
             await saveToFirestore(updated);
             document.getElementById('selPtSessions').textContent = updated.sessions;
             document.getElementById('bookNotes').value = '';
             document.getElementById('bookType').value = '';
+            document.getElementById('bookRoom').value = '';
+            document.getElementById('roomAssignGroup').style.display = 'none';
+            document.getElementById('physioWarning').classList.remove('show');
             toast(`Session booked for ${p.name} on ${fmtDate(date)} at ${fmtTime(time)} ✅`);
         };
 
         window.clearBooking = () => {
             bookingPatientId = null;
             ['bookSearch', 'bookNotes'].forEach(id => document.getElementById(id).value = '');
-            document.getElementById('bookDoctor').value = '';
-            document.getElementById('bookType').value = '';
-            document.getElementById('bookHour').value = '9';
-            document.getElementById('bookMin').value = '00';
-            document.getElementById('bookAmPm').value = 'AM';
-            document.getElementById('bookDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('bookDoctor').value = ''; document.getElementById('bookType').value = '';
+            document.getElementById('bookHour').value = '9'; document.getElementById('bookMin').value = '00'; document.getElementById('bookAmPm').value = 'AM';
+            document.getElementById('bookDate').value = toDateStr(new Date());
             document.getElementById('selectedPatientInfo').style.display = 'none';
             document.getElementById('ptDropdown').classList.remove('open');
+            document.getElementById('physioWarning').classList.remove('show');
+            document.getElementById('roomAssignGroup').style.display = 'none';
+            document.getElementById('bookRoom').value = '';
         };
 
         /* PROFILES */
-        window.renderProfiles = function renderProfiles() {
+        window.renderProfiles = function () {
             const q = document.getElementById('profileSearch').value.toLowerCase();
             const container = document.getElementById('profilesContainer');
             const filtered = patients.filter(p => p.name.toLowerCase().includes(q) || (p.phone || '').includes(q));
             if (!filtered.length) { container.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔍</div><p>No profiles found</p></div>`; return; }
             container.innerHTML = filtered.map(p => {
                 const initials = p.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-                const booked = (p.history || []).length;
-                const pct = p.subscribed > 0 ? Math.round(((p.subscribed - p.sessions) / p.subscribed) * 100) : 0;
+                const booked = (p.history || []).length, pct = p.subscribed > 0 ? Math.round(((p.subscribed - p.sessions) / p.subscribed) * 100) : 0;
                 const barColor = p.sessions === 0 ? 'var(--danger)' : p.sessions <= 2 ? 'var(--warning)' : 'var(--success)';
                 const cls = p.sessions === 0 ? 'badge-empty' : p.sessions <= 2 ? 'badge-low' : 'badge-ok';
                 const last = booked > 0 ? fmtDate(p.history[0].date) : 'No sessions yet';
@@ -2561,7 +2809,7 @@
       </div>
     </div>`;
             }).join('');
-        }
+        };
 
         window.openProfileById = (fid) => {
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -2574,7 +2822,7 @@
 
         function showProfileDetail(fid) {
             const p = patients.find(x => x.firestoreId === fid); if (!p) return;
-            editPatientFid = fid;  // store for edit modal
+            editPatientFid = fid;
             document.getElementById('profilesGrid').style.display = 'none';
             document.getElementById('profileDetail').style.display = 'block';
             const initials = p.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
@@ -2589,11 +2837,9 @@
             const booked = (p.history || []).length;
             document.getElementById('detailBooked').textContent = booked;
             const tl = document.getElementById('sessionTimeline');
-            if (!booked) {
-                tl.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>No sessions booked yet.</p></div>`;
-            } else {
+            if (!booked) { tl.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>No sessions booked yet.</p></div>`; }
+            else {
                 const sorted = [...(p.history || [])].sort((a, b) => {
-                    // Sort by date ascending, then by time ascending within same date
                     if (a.date !== b.date) return a.date.localeCompare(b.date);
                     return timeToMinutes(a.time) - timeToMinutes(b.time);
                 });
@@ -2601,7 +2847,7 @@
       <div class="timeline-item">
         <div class="tl-dot">📋</div>
         <div class="tl-info">
-          <div class="tl-date">${fmtDate(h.date)} &nbsp;·&nbsp; ${fmtTime(h.time)}</div>
+          <div class="tl-date">${fmtDate(h.date)} &nbsp;·&nbsp; ${fmtTime(h.time)}${h.room ? ` &nbsp;·&nbsp; <span style="color:var(--teal)">${h.room}</span>` : ''}</div>
           <div class="tl-sub">${h.doctor || p.doctor}${h.sessionType ? ' · <span style="color:var(--purple)">' + h.sessionType + '</span>' : ''}${h.notes ? ' · <em style="color:var(--text-muted)">' + h.notes + '</em>' : ''}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
@@ -2612,14 +2858,10 @@
             }
         }
 
-        window.closeProfileDetail = () => {
-            document.getElementById('profilesGrid').style.display = 'block';
-            document.getElementById('profileDetail').style.display = 'none';
-            renderProfiles();
-        };
+        window.closeProfileDetail = () => { document.getElementById('profilesGrid').style.display = 'block'; document.getElementById('profileDetail').style.display = 'none'; renderProfiles(); };
 
         /* DOCTORS */
-        window.renderDoctors = function renderDoctors() {
+        window.renderDoctors = function () {
             document.getElementById('doctorsGrid').innerHTML = DOCTORS.map((d, i) => {
                 const count = patients.filter(p => p.doctor === d).length;
                 return `<div class="doctor-card">
@@ -2629,40 +2871,24 @@
       <span class="badge badge-doc" style="margin-top:6px;align-self:flex-start;">${count > 0 ? 'Active' : 'Available'}</span>
     </div>`;
             }).join('');
-        }
+        };
 
-        /* SCHEDULE */
-        let schedActiveDoctor = null;
-        let schedWeekOffset = 0;   // 0 = current week, 1 = next week, -1 = last week
-        let schedActiveDate = null; // 'YYYY-MM-DD'
-
-        window.renderSchedDoctorPicker = function renderSchedDoctorPicker() {
-            const grid = document.getElementById('schedDoctorGrid');
-            if (!grid) return;
-            if (DOCTORS.length === 0) {
-                grid.innerHTML = `<div style="color:var(--text-dim);font-size:13px;">No doctors found.</div>`;
-                return;
-            }
+        /* ── SCHEDULE (per doctor) ── */
+        window.renderSchedDoctorPicker = function () {
+            const grid = document.getElementById('schedDoctorGrid'); if (!grid) return;
             grid.innerHTML = DOCTORS.map((d, i) => {
-                let total = 0;
-                patients.forEach(p => { total += (p.history || []).filter(h => h.doctor === d).length; });
-                const today = toDateStr(new Date());
-                let upcoming = 0;
+                let total = 0; patients.forEach(p => { total += (p.history || []).filter(h => h.doctor === d).length; });
+                const today = toDateStr(new Date()); let upcoming = 0;
                 patients.forEach(p => { upcoming += (p.history || []).filter(h => h.doctor === d && h.date >= today).length; });
                 return `<div class="sched-doc-card" onclick="openSchedDoctor('${d}')">
       <div class="sdc-avatar">${DOCTOR_EMOJIS[i]}</div>
-      <div>
-        <div class="sdc-name">${d}</div>
-        <div class="sdc-count">${upcoming} upcoming · ${total} total</div>
-      </div>
+      <div><div class="sdc-name">${d}</div><div class="sdc-count">${upcoming} upcoming · ${total} total</div></div>
     </div>`;
             }).join('');
-        }
+        };
 
         window.openSchedDoctor = (docName) => {
-            schedActiveDoctor = docName;
-            schedWeekOffset = 0;
-            schedActiveDate = toDateStr(new Date()); // default: today
+            schedActiveDoctor = docName; schedWeekOffset = 0; schedActiveDate = toDateStr(new Date());
             document.getElementById('schedDoctorPicker').style.display = 'none';
             document.getElementById('schedView').style.display = 'block';
             const idx = DOCTORS.indexOf(docName);
@@ -2670,53 +2896,29 @@
             document.getElementById('schedDocName').textContent = docName;
             renderSchedWeek();
         };
-
         window.closeSchedView = () => {
             schedActiveDoctor = null;
             document.getElementById('schedView').style.display = 'none';
             document.getElementById('schedDoctorPicker').style.display = 'block';
             renderSchedDoctorPicker();
         };
-
         window.shiftSchedWeek = (dir) => {
-            if (dir === 0) {
-                schedWeekOffset = 0;
-                schedActiveDate = toDateStr(new Date());
-            } else {
-                schedWeekOffset += dir;
-                // move active date to Monday of the new week
-                const monday = getWeekDays(schedWeekOffset)[0];
-                schedActiveDate = monday;
-            }
+            if (dir === 0) { schedWeekOffset = 0; schedActiveDate = toDateStr(new Date()); }
+            else { schedWeekOffset += dir; schedActiveDate = getWeekDays(schedWeekOffset)[0]; }
             renderSchedWeek();
         };
 
         function getWeekDays(weekOffset) {
-            const now = new Date();
-            // Use local date components to avoid timezone shifting
-            const localNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const day = localNow.getDay(); // 0=Sun,1=Mon,...6=Sat
-            const diffToMonday = (day === 0) ? -6 : 1 - day; // shift so week starts Monday
-            const monday = new Date(localNow);
-            monday.setDate(localNow.getDate() + diffToMonday + weekOffset * 7);
-            return Array.from({ length: 7 }, (_, i) => {
-                const d = new Date(monday);
-                d.setDate(monday.getDate() + i);
-                // Format as YYYY-MM-DD using local time
-                const yyyy = d.getFullYear();
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const dd = String(d.getDate()).padStart(2, '0');
-                return `${yyyy}-${mm}-${dd}`;
-            });
+            const now = new Date(), localNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const day = localNow.getDay(), diffToMonday = (day === 0) ? -6 : 1 - day;
+            const monday = new Date(localNow); monday.setDate(localNow.getDate() + diffToMonday + weekOffset * 7);
+            return Array.from({ length: 7 }, (_, i) => { const d = new Date(monday); d.setDate(monday.getDate() + i); return localDateStr(d); });
         }
 
-        window.renderSchedWeek = function renderSchedWeek() {
-            const days = getWeekDays(schedWeekOffset);
-            const today = toDateStr(new Date());
+        window.renderSchedWeek = function () {
+            const days = getWeekDays(schedWeekOffset), today = toDateStr(new Date());
             const strip = document.getElementById('schedWeekStrip');
             const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-            // sessions for this doctor grouped by date
             const sessionsByDate = {};
             patients.forEach(p => {
                 (p.history || []).forEach(h => {
@@ -2726,77 +2928,35 @@
                     }
                 });
             });
-
             strip.innerHTML = days.map((dateStr, i) => {
-                const hasSessions = (sessionsByDate[dateStr] || []).length > 0;
-                const isToday = dateStr === today;
-                const isActive = dateStr === schedActiveDate;
+                const hasSessions = (sessionsByDate[dateStr] || []).length > 0, isToday = dateStr === today, isActive = dateStr === schedActiveDate;
                 const d = new Date(dateStr + 'T00:00:00');
                 return `<div class="sched-day-pill${isActive ? ' active' : ''}${isToday && !isActive ? ' today' : ''}" onclick="selectSchedDay('${dateStr}')">
-      <div class="spill-day">${DAY_NAMES[i]}</div>
-      <div class="spill-num">${d.getDate()}</div>
+      <div class="spill-day">${DAY_NAMES[i]}</div><div class="spill-num">${d.getDate()}</div>
       <div class="spill-dot${hasSessions ? ' has-sessions' : ''}"></div>
     </div>`;
             }).join('');
-
-            // update count label
-            const allSessions = [];
-            patients.forEach(p => { (p.history || []).forEach(h => { if (h.doctor === schedActiveDoctor) allSessions.push(h); }); });
-            const weekSessions = allSessions.filter(h => days.includes(h.date));
-            document.getElementById('schedDocCount').textContent = `${weekSessions.length} sessions this week`;
-
+            const allS = []; patients.forEach(p => { (p.history || []).forEach(h => { if (h.doctor === schedActiveDoctor) allS.push(h); }); });
+            document.getElementById('schedDocCount').textContent = `${allS.filter(h => days.includes(h.date)).length} sessions this week`;
             renderSchedDay(sessionsByDate);
-        }
-
-        window.selectSchedDay = (dateStr) => {
-            schedActiveDate = dateStr;
-            renderSchedWeek();
         };
 
-        function timeToMinutes(t) {
-            if (!t) return 9999;
-            // Handle "9:00 AM" / "12:30 PM" format
-            const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
-            if (m) {
-                let h = parseInt(m[1]);
-                const min = parseInt(m[2]);
-                const ampm = m[3].toUpperCase();
-                if (ampm === 'AM' && h === 12) h = 0;
-                if (ampm === 'PM' && h !== 12) h += 12;
-                return h * 60 + min;
-            }
-            // Handle "HH:MM" 24h format (legacy)
-            const p = t.split(':');
-            return parseInt(p[0] || 0) * 60 + parseInt(p[1] || 0);
-        }
+        window.selectSchedDay = (dateStr) => { schedActiveDate = dateStr; renderSchedWeek(); };
 
         function renderSchedDay(sessionsByDate) {
             const container = document.getElementById('schedDayView');
-            const sessions = (sessionsByDate[schedActiveDate] || [])
-                .sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
-
+            const sessions = (sessionsByDate[schedActiveDate] || []).sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
             const d = new Date(schedActiveDate + 'T00:00:00');
             const dayLabel = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-            const today = toDateStr(new Date());
-            const isToday = schedActiveDate === today;
-
-            container.innerHTML = `
-    <div class="sched-day-header">
-      <h3>${isToday ? '📍 Today — ' : ''}${dayLabel}</h3>
-      <span class="sched-count">${sessions.length} session${sessions.length !== 1 ? 's' : ''}</span>
-    </div>`;
-
-            if (!sessions.length) {
-                container.innerHTML += `<div class="sched-empty"><div class="se-icon">🗓️</div><p>No sessions scheduled for this day.</p></div>`;
-                return;
-            }
-
+            const isToday = schedActiveDate === toDateStr(new Date());
+            container.innerHTML = `<div class="sched-day-header"><h3>${isToday ? '📍 Today — ' : ''}${dayLabel}</h3><span class="sched-count">${sessions.length} session${sessions.length !== 1 ? 's' : ''}</span></div>`;
+            if (!sessions.length) { container.innerHTML += `<div class="sched-empty"><div class="se-icon">🗓️</div><p>No sessions scheduled for this day.</p></div>`; return; }
             container.innerHTML += sessions.map(s => `
     <div class="sched-slot" id="slot-${s.bookedAt}">
       <div class="sched-time">${fmtTime(s.time)}</div>
       <div class="sched-slot-info">
         <div class="sched-pt-name">${s.patientName}</div>
-        <div class="sched-pt-sub">📞 ${s.patientPhone}${s.sessionType ? ' · <span style="color:var(--purple)">' + s.sessionType + '</span>' : ''}</div>
+        <div class="sched-pt-sub">📞 ${s.patientPhone}${s.sessionType ? ' · <span style="color:var(--purple)">' + s.sessionType + '</span>' : ''}${s.room ? ' · <span style="color:var(--teal)">' + s.room + '</span>' : ''}</div>
         ${s.notes ? `<div class="sched-notes">📝 ${s.notes}</div>` : ''}
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
@@ -2807,174 +2967,239 @@
         }
 
         window.cancelSchedSession = async (firestoreId, bookedAt) => {
-            const p = patients.find(x => x.firestoreId === firestoreId);
-            if (!p) return;
-            const sessionIdx = (p.history || []).findIndex(h => h.bookedAt === bookedAt);
-            if (sessionIdx === -1) return;
+            const p = patients.find(x => x.firestoreId === firestoreId); if (!p) return;
+            const idx = (p.history || []).findIndex(h => h.bookedAt === bookedAt); if (idx === -1) return;
             if (!confirm(`Cancel session for ${p.name}? This will restore 1 session to their balance.`)) return;
-            const newHistory = [...(p.history || [])];
-            newHistory.splice(sessionIdx, 1);
-            const updated = { ...p, sessions: Math.min(p.sessions + 1, p.subscribed || 0), history: newHistory };
-            await saveToFirestore(updated);
+            const nh = [...(p.history || [])]; nh.splice(idx, 1);
+            await saveToFirestore({ ...p, sessions: Math.min(p.sessions + 1, p.subscribed || 0), history: nh });
             toast(`Session cancelled for ${p.name} — 1 session restored ✅`);
         };
-
         window.cancelProfileSession = async (firestoreId, bookedAt) => {
-            const p = patients.find(x => x.firestoreId === firestoreId);
-            if (!p) return;
-            const sessionIdx = (p.history || []).findIndex(h => h.bookedAt === bookedAt);
-            if (sessionIdx === -1) return;
+            const p = patients.find(x => x.firestoreId === firestoreId); if (!p) return;
+            const idx = (p.history || []).findIndex(h => h.bookedAt === bookedAt); if (idx === -1) return;
             if (!confirm(`Cancel this session for ${p.name}? This will restore 1 session to their balance.`)) return;
-            const newHistory = [...(p.history || [])];
-            newHistory.splice(sessionIdx, 1);
-            const updated = { ...p, sessions: Math.min(p.sessions + 1, p.subscribed || 0), history: newHistory };
-            await saveToFirestore(updated);
-            // Re-render the profile detail with updated data
+            const nh = [...(p.history || [])]; nh.splice(idx, 1);
+            await saveToFirestore({ ...p, sessions: Math.min(p.sessions + 1, p.subscribed || 0), history: nh });
             showProfileDetail(firestoreId);
             toast(`Session cancelled — 1 session restored to ${p.name} ✅`);
         };
 
-        /* ── EDIT PATIENT ── */
-        let editPatientFid = null;
+        /* ── DAILY OVERVIEW (all doctors for a day) ── */
+        window.renderDailyOverview = function () {
+            const date = document.getElementById('dailyDate').value || toDateStr(new Date());
+            const tabs = document.getElementById('dailyTabs');
+            const content = document.getElementById('dailyContent');
 
+            // Gather all sessions for this date grouped by doctor
+            const byDoctor = {};
+            DOCTORS.forEach(d => { byDoctor[d] = []; });
+            patients.forEach(p => {
+                (p.history || []).forEach(h => {
+                    if (h.date === date) byDoctor[h.doctor || p.doctor]?.push({ ...h, patientName: p.name, patientPhone: p.phone || '—' });
+                });
+            });
+
+            // Filter to doctors who have sessions, unless none then show all
+            const activeDoctors = DOCTORS.filter(d => byDoctor[d].length > 0);
+            const showDoctors = activeDoctors.length > 0 ? activeDoctors : DOCTORS;
+
+            const totalSessions = Object.values(byDoctor).reduce((a, v) => a + v.length, 0);
+            const d = new Date(date + 'T00:00:00');
+            const dayLabel = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const isToday = date === toDateStr(new Date());
+
+            // Header
+            tabs.innerHTML = `<div style="font-size:13px;color:var(--text-dim);padding:4px 0;width:100%;">${isToday ? '📍 Today — ' : ''}${dayLabel} &nbsp;·&nbsp; <strong style="color:var(--text);">${totalSessions} total session${totalSessions !== 1 ? 's' : ''}</strong></div>`;
+
+            if (totalSessions === 0) {
+                content.innerHTML = `<div class="sched-empty"><div class="se-icon">🗓️</div><p>No sessions scheduled for this day.</p></div>`;
+                return;
+            }
+
+            content.innerHTML = DOCTORS.map((d, i) => {
+                const sessions = (byDoctor[d] || []).sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+                if (!sessions.length) return '';
+                return `<div class="daily-doc-section">
+      <div class="daily-doc-header">
+        <div class="dh-avatar">${DOCTOR_EMOJIS[i]}</div>
+        <div class="dh-name">${d}</div>
+        <div class="dh-count">${sessions.length} session${sessions.length !== 1 ? 's' : ''}</div>
+      </div>
+      ${sessions.map(s => `
+        <div class="daily-session-row">
+          <div class="dsr-time">${fmtTime(s.time)}</div>
+          <div class="dsr-info">
+            <div class="dsr-name">${s.patientName}</div>
+            <div class="dsr-sub">📞 ${s.patientPhone}${s.sessionType ? ' · <span style="color:var(--purple)">' + s.sessionType + '</span>' : ''}${s.room ? ' · <span style="color:var(--teal)">' + s.room + '</span>' : ''}</div>
+          </div>
+          ${s.sessionType === 'Physiotherapy' ? '<span class="badge badge-purple" style="font-size:10px;flex-shrink:0;">Physio</span>' : ''}
+        </div>`).join('')}
+    </div>`;
+            }).join('');
+        };
+
+        /* ── ROOM OCCUPATION ── */
+        window.renderRoomOccupation = function () {
+            const date = document.getElementById('roomDate').value || toDateStr(new Date());
+            const rooms = ['Room A', 'Room B'];
+            const roomColors = ['accent', 'teal'];
+
+            // Collect all sessions for this date
+            const allSessions = [];
+            patients.forEach(p => {
+                (p.history || []).forEach(h => {
+                    if (h.date === date) allSessions.push({ ...h, patientName: p.name, patientPhone: p.phone || '—', firestoreId: p.firestoreId });
+                });
+            });
+
+            // Group by room
+            const byRoom = { 'Room A': [], 'Room B': [], 'Unassigned': [] };
+            allSessions.forEach(s => {
+                if (s.room === 'Room A') byRoom['Room A'].push(s);
+                else if (s.room === 'Room B') byRoom['Room B'].push(s);
+                else byRoom['Unassigned'].push(s);
+            });
+
+            // Get all unique time slots for timeline
+            const allTimes = [...new Set(allSessions.map(s => s.time))].sort((a, b) => timeToMinutes(a) - timeToMinutes(b));
+
+            const grid = document.getElementById('roomGrid');
+            grid.innerHTML = rooms.map((room, ri) => {
+                const sessions = byRoom[room].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+                const occupiedSlots = sessions.length;
+                const iconClass = ri === 0 ? 'a' : 'b';
+                const colorVar = ri === 0 ? 'accent' : 'teal';
+                return `<div class="room-card">
+      <div class="room-header">
+        <div class="room-icon ${iconClass}">${ri === 0 ? '🅰️' : '🅱️'}</div>
+        <div>
+          <div class="room-title">${room}</div>
+          <div class="room-status" style="color:var(--${colorVar})">${occupiedSlots} session${occupiedSlots !== 1 ? 's' : ''} today</div>
+        </div>
+      </div>
+      <div class="room-slots">
+        ${sessions.length === 0
+                        ? `<div style="padding:14px;font-size:13px;color:var(--text-muted);text-align:center;">🟢 All clear — no sessions</div>`
+                        : sessions.map(s => `
+            <div class="room-slot occupied">
+              <div class="rs-dot occ"></div>
+              <div class="rs-time occ">${fmtTime(s.time)}</div>
+              <div class="rs-info"><strong>${s.patientName}</strong><br><span style="font-size:11px;color:var(--text-dim);">${s.sessionType || 'Session'} · ${s.doctor}</span></div>
+            </div>`).join('')}
+      </div>
+      ${sessions.length > 0 ? `<div class="room-assign-note">Showing ${sessions.length} assigned session${sessions.length !== 1 ? 's' : ''} for this room.</div>` : ''}
+    </div>`;
+            }).join('');
+
+            // Full day timeline
+            const timeline = document.getElementById('roomTimeline');
+            if (allTimes.length === 0) {
+                timeline.innerHTML = `<div class="sched-empty"><div class="se-icon">🏠</div><p>No sessions scheduled for this day.</p></div>`;
+                return;
+            }
+
+            timeline.innerHTML = `<div style="background:var(--card);border:1px solid var(--border-soft);border-radius:14px;overflow:hidden;">
+    <div style="display:grid;grid-template-columns:80px 1fr 1fr;background:var(--elevated);border-bottom:1px solid var(--border);">
+      <div style="padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-dim);">Time</div>
+      <div style="padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--accent);">🅰️ Room A</div>
+      <div style="padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--teal);">🅱️ Room B</div>
+    </div>
+    ${allTimes.map(time => {
+                const rA = allSessions.filter(s => s.room === 'Room A' && s.time === time);
+                const rB = allSessions.filter(s => s.room === 'Room B' && s.time === time);
+                const unassigned = allSessions.filter(s => !s.room && s.time === time);
+                const rACellColor = rA.length ? 'var(--danger-dim)' : 'transparent';
+                const rBCellColor = rB.length ? 'var(--teal-dim)' : 'transparent';
+                return `<div style="display:grid;grid-template-columns:80px 1fr 1fr;border-bottom:1px solid var(--border-soft);">
+        <div style="padding:10px 14px;font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--accent);align-self:center;">${fmtTime(time)}</div>
+        <div style="padding:10px 14px;background:${rACellColor};border-right:1px solid var(--border-soft);">
+          ${rA.length ? rA.map(s => `<div style="font-size:12px;font-weight:600;">${s.patientName}</div><div style="font-size:11px;color:var(--text-dim);">${s.sessionType || 'Session'}</div>`).join('')
+                        : `<span style="font-size:12px;color:var(--success);">🟢 Free</span>`}
+        </div>
+        <div style="padding:10px 14px;background:${rBCellColor};">
+          ${rB.length ? rB.map(s => `<div style="font-size:12px;font-weight:600;">${s.patientName}</div><div style="font-size:11px;color:var(--text-dim);">${s.sessionType || 'Session'}</div>`).join('')
+                        : `<span style="font-size:12px;color:var(--success);">🟢 Free</span>`}
+        </div>
+      </div>`;
+            }).join('')}
+    ${byRoom['Unassigned'].length ? `
+    <div style="padding:12px 14px;background:var(--warning-dim);border-top:1px solid rgba(245,158,11,0.2);">
+      <div style="font-size:11px;font-weight:700;color:var(--warning);margin-bottom:6px;">⚠️ Unassigned sessions (${byRoom['Unassigned'].length})</div>
+      ${byRoom['Unassigned'].map(s => `<div style="font-size:12px;color:var(--text-dim);">${fmtTime(s.time)} · ${s.patientName} · ${s.doctor}</div>`).join('')}
+    </div>`: ''}
+  </div>`;
+        };
+
+        /* EDIT PATIENT */
+        let _epFid = null;
         window.openEditPatientModal = () => {
-            const fid = document.getElementById('epFirestoreId').value || editPatientFid;
-            // get current firestoreId from the hidden field set by showProfileDetail
-            const p = patients.find(x => x.firestoreId === (editPatientFid));
-            if (!p) return;
-
+            const p = patients.find(x => x.firestoreId === editPatientFid); if (!p) return;
             document.getElementById('epName').value = p.name || '';
             document.getElementById('epPhone').value = p.phone || '';
             document.getElementById('epAmount').value = p.amount || '';
             document.getElementById('epSlot').value = p.time || 'AM';
-
-            // Doctor select
             const docSel = document.getElementById('epDoctor');
             docSel.innerHTML = DOCTORS.map(d => `<option${d === p.doctor ? ' selected' : ''}>${d}</option>`).join('');
-
-            // Sessions slider
-            const used = (p.history || []).length;
-            const sub = p.subscribed || 0;
+            const used = (p.history || []).length, sub = p.subscribed || 0;
             document.getElementById('epSessions').value = sub;
             document.getElementById('epSessions').max = Math.max(48, sub + 24);
             document.getElementById('epSessionsVal').textContent = sub;
             document.getElementById('epUsed').textContent = used;
             document.getElementById('epNewLeft').textContent = Math.max(0, sub - used);
-
             document.getElementById('editPatientModal').classList.remove('hidden');
         };
-
         window.updateEpSessionsLeft = () => {
-            const fid = editPatientFid;
-            const p = patients.find(x => x.firestoreId === fid);
+            const p = patients.find(x => x.firestoreId === editPatientFid);
             const used = p ? (p.history || []).length : 0;
-            const newSub = parseInt(document.getElementById('epSessions').value) || 0;
-            const newLeft = Math.max(0, newSub - used);
+            const newLeft = Math.max(0, (parseInt(document.getElementById('epSessions').value) || 0) - used);
             document.getElementById('epNewLeft').textContent = newLeft;
         };
-
-        window.closeEditPatientModal = () => {
-            document.getElementById('editPatientModal').classList.add('hidden');
-        };
-
+        window.closeEditPatientModal = () => document.getElementById('editPatientModal').classList.add('hidden');
         window.saveEditPatient = async () => {
-            const fid = editPatientFid;
-            const p = patients.find(x => x.firestoreId === fid);
-            if (!p) return;
-
+            const p = patients.find(x => x.firestoreId === editPatientFid); if (!p) return;
             const name = document.getElementById('epName').value.trim();
-            const phone = document.getElementById('epPhone').value.trim();
-            const doctor = document.getElementById('epDoctor').value;
-            const slot = document.getElementById('epSlot').value;
-            const amount = document.getElementById('epAmount').value;
-            const newSub = parseInt(document.getElementById('epSessions').value) || 0;
-            const used = (p.history || []).length;
-            const newLeft = Math.max(0, newSub - used);
-
             if (!name) { toast('Name cannot be empty', true); return; }
-
-            const updated = { ...p, name, phone, doctor, time: slot, amount, subscribed: newSub, sessions: newLeft };
-            await saveToFirestore(updated);
-            closeEditPatientModal();
-            showProfileDetail(fid); // refresh the detail view
-            toast(`${name}'s profile updated ✅`);
+            const phone = document.getElementById('epPhone').value.trim(), doctor = document.getElementById('epDoctor').value,
+                slot = document.getElementById('epSlot').value, amount = document.getElementById('epAmount').value,
+                newSub = parseInt(document.getElementById('epSessions').value) || 0, used = (p.history || []).length,
+                newLeft = Math.max(0, newSub - used);
+            await saveToFirestore({ ...p, name, phone, doctor, time: slot, amount, subscribed: newSub, sessions: newLeft });
+            closeEditPatientModal(); showProfileDetail(editPatientFid); toast(`${name}'s profile updated ✅`);
         };
+        document.getElementById('editPatientModal').addEventListener('click', e => { if (e.target === document.getElementById('editPatientModal')) closeEditPatientModal(); });
 
-        // Close on overlay click
-        document.getElementById('editPatientModal').addEventListener('click', e => {
-            if (e.target === document.getElementById('editPatientModal')) closeEditPatientModal();
-        });
-
+        /* EDIT SESSION */
         window.openEditModal = (firestoreId, bookedAt) => {
-            const p = patients.find(x => x.firestoreId === firestoreId);
-            if (!p) return;
-            const h = (p.history || []).find(x => x.bookedAt === bookedAt);
-            if (!h) return;
-
+            const p = patients.find(x => x.firestoreId === firestoreId); if (!p) return;
+            const h = (p.history || []).find(x => x.bookedAt === bookedAt); if (!h) return;
             document.getElementById('editFirestoreId').value = firestoreId;
             document.getElementById('editBookedAt').value = bookedAt;
             document.getElementById('editDate').value = h.date || '';
             document.getElementById('editNotes').value = h.notes || '';
             document.getElementById('editType').value = h.sessionType || '';
-
-            // Populate doctor select
+            document.getElementById('editRoom').value = h.room || '';
             const docSel = document.getElementById('editDoctor');
             docSel.innerHTML = DOCTORS.map(d => `<option${d === h.doctor ? ' selected' : ''}>${d}</option>`).join('');
-
-            // Parse time back into H, MM, AMPM
             const tm = (h.time || '9:00 AM').match(/(\d+):(\d+)\s*(AM|PM)/i);
-            if (tm) {
-                document.getElementById('editHour').value = tm[1];
-                document.getElementById('editMin').value = tm[2];
-                document.getElementById('editAmPm').value = tm[3].toUpperCase();
-            }
-
+            if (tm) { document.getElementById('editHour').value = tm[1]; document.getElementById('editMin').value = tm[2]; document.getElementById('editAmPm').value = tm[3].toUpperCase(); }
             document.getElementById('editModal').classList.remove('hidden');
         };
-
-        window.closeEditModal = () => {
-            document.getElementById('editModal').classList.add('hidden');
-        };
-
+        window.closeEditModal = () => document.getElementById('editModal').classList.add('hidden');
         window.saveEditSession = async () => {
             const firestoreId = document.getElementById('editFirestoreId').value;
             const bookedAt = parseInt(document.getElementById('editBookedAt').value);
-            const p = patients.find(x => x.firestoreId === firestoreId);
-            if (!p) return;
-
+            const p = patients.find(x => x.firestoreId === firestoreId); if (!p) return;
             const newDate = document.getElementById('editDate').value;
-            const hour = document.getElementById('editHour').value;
-            const min = document.getElementById('editMin').value;
-            const ampm = document.getElementById('editAmPm').value;
-            const newTime = `${hour}:${min} ${ampm}`;
-            const newDoc = document.getElementById('editDoctor').value;
-            const newType = document.getElementById('editType').value;
-            const newNotes = document.getElementById('editNotes').value.trim();
-
             if (!newDate) { toast('Please select a date', true); return; }
-
-            const newHistory = (p.history || []).map(h =>
-                h.bookedAt === bookedAt
-                    ? { ...h, date: newDate, time: newTime, doctor: newDoc, sessionType: newType, notes: newNotes }
-                    : h
-            );
-
+            const hour = document.getElementById('editHour').value, min = document.getElementById('editMin').value, ampm = document.getElementById('editAmPm').value;
+            const newTime = `${hour}:${min} ${ampm}`;
+            const newDoc = document.getElementById('editDoctor').value, newType = document.getElementById('editType').value,
+                newNotes = document.getElementById('editNotes').value.trim(), newRoom = document.getElementById('editRoom').value;
+            const newHistory = (p.history || []).map(h => h.bookedAt === bookedAt ? { ...h, date: newDate, time: newTime, doctor: newDoc, sessionType: newType, notes: newNotes, room: newRoom } : h);
             await saveToFirestore({ ...p, history: newHistory });
-            closeEditModal();
-            toast('Session updated ✅');
+            closeEditModal(); toast('Session updated ✅');
         };
-
-        // Close modal on overlay click
-        document.getElementById('editModal').addEventListener('click', e => {
-            if (e.target === document.getElementById('editModal')) closeEditModal();
-        });
-
-        function toDateStr(d) {
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            return `${yyyy}-${mm}-${dd}`;
-        }
+        document.getElementById('editModal').addEventListener('click', e => { if (e.target === document.getElementById('editModal')) closeEditModal(); });
 
         /* EXPORT */
         window.exportToCSV = () => {
@@ -2982,57 +3207,28 @@
             patients.forEach(p => csv += `${p.name},${p.phone || ''},${p.doctor},${p.time},${p.sessions},${p.subscribed || 0},${p.amount || 0},${(p.history || []).length}\n`);
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-            a.download = 'ClinicPro_Export.csv';
-            a.click();
+            a.download = 'ClinicPro_Export.csv'; a.click();
         };
 
         /* HELPERS */
-        function fmtDate(d) {
-            if (!d) return '—';
-            const [y, m, day] = d.split('-');
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            return `${parseInt(day)} ${months[parseInt(m) - 1]} ${y}`;
+        function timeToMinutes(t) {
+            if (!t) return 9999;
+            const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+            if (m) { let h = parseInt(m[1]); const min = parseInt(m[2]), ap = m[3].toUpperCase(); if (ap === 'AM' && h === 12) h = 0; if (ap === 'PM' && h !== 12) h += 12; return h * 60 + min; }
+            const p = t.split(':'); return parseInt(p[0] || 0) * 60 + parseInt(p[1] || 0);
         }
-
-        // Accepts "HH:MM" (24h) or already-formatted "9:00 AM" — always returns "9:00 AM" style
-        function fmtTime(t) {
-            if (!t || t === '—') return '—';
-            // Already 12h format (contains AM/PM)
-            if (t.includes('AM') || t.includes('PM')) return t;
-            // Convert from 24h "HH:MM"
-            const [hStr, mStr] = t.split(':');
-            let h = parseInt(hStr);
-            const ampm = h >= 12 ? 'PM' : 'AM';
-            h = h % 12 || 12;
-            return `${h}:${mStr} ${ampm}`;
-        }
-
-        function toast(msg, err = false) {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.className = 'toast' + (err ? ' error' : '') + ' show';
-            setTimeout(() => t.classList.remove('show'), 3200);
-        }
-
+        function toDateStr(d) { const yyyy = d.getFullYear(), mm = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0'); return `${yyyy}-${mm}-${dd}`; }
+        function localDateStr(d) { return toDateStr(d); }
+        function fmtDate(d) { if (!d) return '—'; const [y, m, day] = d.split('-'); const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; return `${parseInt(day)} ${months[parseInt(m) - 1]} ${y}`; }
+        function fmtTime(t) { if (!t || t === '—') return '—'; if (t.includes('AM') || t.includes('PM')) return t; const [hStr, mStr] = t.split(':'); let h = parseInt(hStr); const ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return `${h}:${mStr} ${ampm}`; }
+        function toast(msg, err = false) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast' + (err ? ' error' : '') + ' show'; setTimeout(() => t.classList.remove('show'), 3200); }
         window.toast = toast;
 
-        document.addEventListener('click', e => {
-            if (!e.target.closest('.patient-picker')) document.getElementById('ptDropdown').classList.remove('open');
-        });
+        document.addEventListener('click', e => { if (!e.target.closest('.patient-picker')) document.getElementById('ptDropdown').classList.remove('open'); });
 
-        /* ── MOBILE SIDEBAR ── */
-        window.toggleSidebar = () => {
-            const sb = document.getElementById('sidebar');
-            const ov = document.getElementById('sidebarOverlay');
-            sb.classList.toggle('open');
-            ov.classList.toggle('open');
-        };
-        window.closeSidebar = () => {
-            document.getElementById('sidebar').classList.remove('open');
-            document.getElementById('sidebarOverlay').classList.remove('open');
-        };
+        window.toggleSidebar = () => { const sb = document.getElementById('sidebar'), ov = document.getElementById('sidebarOverlay'); sb.classList.toggle('open'); ov.classList.toggle('open'); };
+        window.closeSidebar = () => { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('open'); };
 
-        /* ── BOTTOM NAV ── */
         window.showPanelMobile = (id, el) => {
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -3045,14 +3241,11 @@
             if (id === 'doctors') renderDoctors();
             if (id === 'profiles') { closeProfileDetail(); renderProfiles(); }
             if (id === 'schedule') { closeSchedView(); renderSchedDoctorPicker(); }
+            if (id === 'daily') renderDailyOverview();
+            if (id === 'rooms') renderRoomOccupation();
             closeSidebar();
-            // Scroll content area back to top on panel switch
-            const ca = document.querySelector('.content-area');
-            if (ca) ca.scrollTop = 0;
+            const ca = document.querySelector('.content-area'); if (ca) ca.scrollTop = 0;
         };
-
-        // sync bottom nav badge with sidebar badge
-
     </script>
 </body>
 
