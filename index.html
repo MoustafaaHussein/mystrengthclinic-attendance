@@ -2121,6 +2121,7 @@
                     </div>
                     <div class="sessions-section">
                         <h3>📋 Session History</h3>
+                        <div id="clinicalSummary" style="margin-bottom:14px;"></div>
                         <div class="timeline" id="sessionTimeline"></div>
                     </div>
                 </div>
@@ -2335,7 +2336,7 @@
                     <div class="form-grid">
                         <div class="form-group full">
                             <label>Patient</label>
-                            <input type="text" id="ddPatientSearch" oninput="loadDoctorDetailPatient()" placeholder="Search patient by name...">
+                            <input type="text" id="ddPatientSearch" oninput="loadDoctorDetailPatient()" placeholder="Search patient by name..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                             <input type="hidden" id="ddPatient">
                         </div>
                         <div class="form-group"><label>Name</label><input type="text" id="ddName" readonly></div>
@@ -3032,6 +3033,14 @@
             document.getElementById('detailSubscribed').textContent = p.subscribed || 0;
             const booked = (p.history || []).length;
             document.getElementById('detailBooked').textContent = booked;
+            const clinicalSummary = document.getElementById('clinicalSummary');
+            clinicalSummary.innerHTML = `
+    <div style="background:var(--elevated);border:1px solid var(--border);border-radius:10px;padding:12px;">
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.8px;">Clinical Details</div>
+      <div style="font-size:12px;color:var(--text);margin-bottom:6px;"><strong>Functional Assessment:</strong> ${p.functionalAssessment || '—'}</div>
+      <div style="font-size:12px;color:var(--text);margin-bottom:6px;"><strong>Injury:</strong> ${p.injury || '—'}</div>
+      <div style="font-size:12px;color:var(--text);"><strong>Notes:</strong> ${p.doctorNotes || '—'}</div>
+    </div>`;
             const tl = document.getElementById('sessionTimeline');
             if (!booked) { tl.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>No sessions booked yet.</p></div>`; }
             else {
@@ -3131,6 +3140,10 @@
             renderAssignedPatients();
         };
 
+        window.openAssignedPatientProfile = function (fid) {
+            openProfileById(fid);
+        };
+
         window.renderAssignedPatients = function () {
             const wrap = document.getElementById('assignedPatientsList');
             if (!wrap) return;
@@ -3140,7 +3153,7 @@
                 return;
             }
             wrap.innerHTML = done.map(p => `
-    <div class="sched-slot" style="margin-bottom:10px;">
+    <div class="sched-slot" style="margin-bottom:10px;cursor:pointer;" onclick="openAssignedPatientProfile('${p.firestoreId}')">
       <div class="sched-slot-info">
         <div class="sched-pt-name">${p.name}</div>
         <div class="sched-pt-sub">Primary: ${p.primaryDoctor || p.doctor || '—'} · Assigned: ${p.doctor || '—'}</div>
