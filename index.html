@@ -2338,6 +2338,7 @@
                             <label>Patient</label>
                             <input type="text" id="ddPatientSearch" oninput="loadDoctorDetailPatient()" placeholder="Search patient by name..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                             <input type="hidden" id="ddPatient">
+                            <div id="ddSearchResults" style="margin-top:8px;"></div>
                         </div>
                         <div class="form-group"><label>Name</label><input type="text" id="ddName" readonly></div>
                         <div class="form-group"><label>Age</label><input type="number" id="ddAge" min="0" placeholder="e.g. 35"></div>
@@ -2362,6 +2363,16 @@
             <div class="panel" id="panel-assignedPatients">
                 <div class="form-card">
                     <h3>📌 Assigned Patients (After Assessment)</h3>
+                    <div class="form-grid" style="margin-bottom:14px;">
+                        <div class="form-group"><label>Assigned Doctor</label>
+                            <select id="apDoctorFilter" onchange="renderAssignedPatients()">
+                                <option value="">All Assigned Doctors</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Search Patient Name</label>
+                            <input type="text" id="apSearch" placeholder="Type patient name..." oninput="renderAssignedPatients()" autocomplete="off">
+                        </div>
+                    </div>
                     <div id="assignedPatientsList"></div>
                 </div>
             </div>
@@ -2646,9 +2657,11 @@
         };
 
         function populateSelects() {
-            ['doctorFilter', 'bookDoctor', 'pDoctor', 'pPrimaryDoctor', 'ddAssignedDoctor'].forEach(sid => {
+            ['doctorFilter', 'bookDoctor', 'pDoctor', 'pPrimaryDoctor', 'ddAssignedDoctor', 'apDoctorFilter'].forEach(sid => {
                 const el = document.getElementById(sid); if (!el) return;
-                el.innerHTML = sid === 'doctorFilter' ? '<option value="">All Doctors</option>' : '<option value="">Select Doctor</option>';
+                if (sid === 'doctorFilter') el.innerHTML = '<option value="">All Doctors</option>';
+                else if (sid === 'apDoctorFilter') el.innerHTML = '<option value="">All Assigned Doctors</option>';
+                else el.innerHTML = '<option value="">Select Doctor</option>';
                 DOCTORS.forEach(d => el.innerHTML += `<option>${d}</option>`);
             });
         }
@@ -3069,11 +3082,13 @@
         window.renderDoctorDetailsSection = function () {
             const searchEl = document.getElementById('ddPatientSearch');
             const hiddenIdEl = document.getElementById('ddPatient');
+            const resultsEl = document.getElementById('ddSearchResults');
             if (!searchEl || !hiddenIdEl) return;
             const pending = patients.filter(p => !hasInitialSessionDone(p));
             if (!pending.length) {
                 searchEl.value = '';
                 hiddenIdEl.value = '';
+                if (resultsEl) resultsEl.innerHTML = '';
                 document.getElementById('ddName').value = '';
                 document.getElementById('ddAge').value = '';
                 document.getElementById('ddFunctional').value = '';
@@ -3085,15 +3100,40 @@
             }
         };
 
-        window.loadDoctorDetailPatient = function () {
-            const searchVal = document.getElementById('ddPatientSearch').value.trim().toLowerCase();
-            const pending = patients.filter(p => !hasInitialSessionDone(p));
-            const match = pending.find(p => (p.name || '').toLowerCase() === searchVal)
-                || pending.find(p => (p.name || '').toLowerCase().includes(searchVal));
-            const fid = match ? match.firestoreId : '';
+        window.selectDoctorDetailsPatient = function (fid) {
             document.getElementById('ddPatient').value = fid;
             const p = patients.find(x => x.firestoreId === fid);
-            if (!p) {
+            if (!p) return;
+            document.getElementById('ddName').value = p.name || '';
+            document.getElementById('ddAge').value = p.age || '';
+            document.getElementById('ddFunctional').value = p.functionalAssessment || '';
+            document.getElementById('ddInjury').value = p.injury || '';
+            document.getElementById('ddNotes').value = p.doctorNotes || '';
+            document.getElementById('ddAssignedDoctor').value = p.doctor || '';
+            document.getElementById('ddPlan').value = p.plan || 'Mixed';
+            document.getElementById('ddSessionsNeeded').value = p.sessionsNeeded || p.subscribed || 0;
+        };
+
+        window.loadDoctorDetailPatient = function () {
+            const searchVal = document.getElementById('ddPatientSearch').value.trim().toLowerCase();
+            const resultsEl = document.getElementById('ddSearchResults');
+            const pending = patients.filter(p => !hasInitialSessionDone(p));
+            const matches = !searchVal ? [] : pending.filter(p => (p.name || '').toLowerCase().includes(searchVal));
+            if (resultsEl) {
+                if (!searchVal) resultsEl.innerHTML = '';
+                else if (!matches.length) resultsEl.innerHTML = `<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">No patient found.</div>`;
+                else {
+                    resultsEl.innerHTML = matches.slice(0, 8).map(p => `
+        <div onclick="selectDoctorDetailsPatient('${p.firestoreId}')" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;background:var(--elevated);">
+          <div style="font-size:13px;font-weight:600;">${p.name}</div>
+          <div style="font-size:11px;color:var(--text-dim);">Primary: ${p.primaryDoctor || p.doctor || '—'} · Initial: ${getInitialSessionType(p)}</div>
+        </div>`).join('');
+                }
+            }
+            const fid = document.getElementById('ddPatient').value;
+            const p = patients.find(x => x.firestoreId === fid);
+            if (!p || (searchVal && !(p.name || '').toLowerCase().includes(searchVal))) {
+                document.getElementById('ddPatient').value = '';
                 document.getElementById('ddName').value = '';
                 document.getElementById('ddAge').value = '';
                 document.getElementById('ddFunctional').value = '';
@@ -3104,15 +3144,6 @@
                 document.getElementById('ddSessionsNeeded').value = '';
                 return;
             }
-            document.getElementById('ddPatientSearch').value = p.name || '';
-            document.getElementById('ddName').value = p.name || '';
-            document.getElementById('ddAge').value = p.age || '';
-            document.getElementById('ddFunctional').value = p.functionalAssessment || '';
-            document.getElementById('ddInjury').value = p.injury || '';
-            document.getElementById('ddNotes').value = p.doctorNotes || '';
-            document.getElementById('ddAssignedDoctor').value = p.doctor || '';
-            document.getElementById('ddPlan').value = p.plan || 'Mixed';
-            document.getElementById('ddSessionsNeeded').value = p.sessionsNeeded || p.subscribed || 0;
         };
 
         window.saveDoctorDetails = async () => {
@@ -3147,9 +3178,14 @@
         window.renderAssignedPatients = function () {
             const wrap = document.getElementById('assignedPatientsList');
             if (!wrap) return;
-            const done = patients.filter(p => hasInitialSessionDone(p));
+            const selectedDoctor = (document.getElementById('apDoctorFilter')?.value || '').trim();
+            const searchName = (document.getElementById('apSearch')?.value || '').trim().toLowerCase();
+            const done = patients
+                .filter(p => hasInitialSessionDone(p))
+                .filter(p => !selectedDoctor || (p.doctor || '') === selectedDoctor)
+                .filter(p => !searchName || (p.name || '').toLowerCase().includes(searchName));
             if (!done.length) {
-                wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">📌</div><p>No assigned patients yet. Complete initial session first.</p></div>`;
+                wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">📌</div><p>No assigned patients match this filter.</p></div>`;
                 return;
             }
             wrap.innerHTML = done.map(p => `
