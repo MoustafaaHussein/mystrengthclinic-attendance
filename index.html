@@ -2193,7 +2193,7 @@
                             <label>Assign Room</label>
                             <select id="bookRoom"
                                 style="background:var(--elevated);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
-                                <option value="">Auto-assign</option>
+                                <option value="">Select room…</option>
                                 <option value="Room A">Room A</option>
                                 <option value="Room B">Room B</option>
                             </select>
@@ -2233,10 +2233,15 @@
                         <div class="form-group"><label>Mobile Phone</label><input type="text" id="pPhone"
                                 placeholder="e.g. 01012345678"></div>
                         <div class="form-group"><label>Assigned Doctor</label><select id="pDoctor"></select></div>
+                        <div class="form-group"><label>First Session Type</label>
+                            <input type="text" value="Assessment (required)" disabled
+                                style="background:var(--elevated);border:1px solid var(--border);color:var(--text-dim);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
+                        </div>
                         <div class="form-group full">
-                            <label>Sessions Subscribed &nbsp;<span class="sessions-val" id="sessVal">12</span></label>
-                            <input type="range" min="0" max="24" value="12" id="pSessions"
+                            <label>Sessions Subscribed &nbsp;<span class="sessions-val" id="sessVal">0</span></label>
+                            <input type="range" min="0" max="24" value="0" id="pSessions"
                                 oninput="document.getElementById('sessVal').textContent=this.value">
+                            <div style="font-size:12px;color:var(--text-dim);margin-top:6px;">Package sessions can be assigned later from patient profile. Assessment is not counted.</div>
                         </div>
                         <div class="form-group"><label>Amount Paid (EGP)</label><input type="number" id="pAmount"
                                 placeholder="e.g. 2400" min="0"></div>
@@ -2484,6 +2489,9 @@
         const DOCTORS = ["Dr. Youssef", "Dr. Hadeer", "Dr. Hamdoon", "Dr. Abdullah", "Dr. Habiba", "Dr. Ahmed Yehia", "Dr. Habiba Saied", "Dr. Yehia Sadek", "Dr. Zeyad Ramzy"];
         const DOCTOR_EMOJIS = ["👨‍⚕️", "👩‍⚕️", "👨‍⚕️", "👨‍⚕️", "👩‍⚕️", "👨‍⚕️", "👩‍⚕️", "👨‍⚕️", "👨‍⚕️"];
         const PHYSIO_MAX = 2; // max simultaneous physiotherapy sessions clinic-wide
+        const SESSION_TYPES = ['Physiotherapy', 'Rehabilitation', 'Assessment', 'Re-Assessment', 'Half Body Recovery', 'Full Body Recovery'];
+        const SESSION_DURATION_MINUTES = { Rehabilitation: 90, Assessment: 30, 'Re-Assessment': 30 };
+        const NON_PACKAGE_TYPES = new Set(['Assessment']);
         const TITLES = { patients: 'Patients List', profiles: 'Patient Profiles', booking: 'Book a Session', add: 'Add New Patient', doctors: 'Associated Doctors', schedule: 'Schedule', daily: 'Daily Overview', rooms: 'Room Occupation' };
 
         let patients = [];
@@ -2514,6 +2522,7 @@
                 document.getElementById('main').style.display = 'flex';
                 document.getElementById('userEmail').textContent = user.email;
                 populateSelects();
+                setupBookingWatchers();
                 document.getElementById('bookDate').value = toDateStr(new Date());
                 document.getElementById('dailyDate').value = toDateStr(new Date());
                 document.getElementById('roomDate').value = toDateStr(new Date());
@@ -2583,6 +2592,17 @@
             });
         }
 
+        function setupBookingWatchers() {
+            ['bookDate', 'bookHour', 'bookMin', 'bookAmPm', 'bookRoom'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('change', () => {
+                    checkPhysioSlot();
+                    updateRoomAvailInfo();
+                });
+            });
+        }
+
         /* STATS */
         window.renderStats = function () {
             const total = patients.length, low = patients.filter(p => p.sessions > 0 && p.sessions <= 2).length,
@@ -2636,10 +2656,10 @@
                 amount = document.getElementById('pAmount').value, time = document.getElementById('pTime').value;
             if (!name) { toast('Please enter a patient name', true); return; }
             if (!doctor) { toast('Please select a doctor', true); return; }
-            const newP = { id: Date.now(), name, phone, doctor, sessions, subscribed: sessions, amount, time, history: [] };
+            const newP = { id: Date.now(), name, phone, doctor, sessions, subscribed: sessions, amount, time, assessmentDone: false, history: [] };
             await saveToFirestore(newP); clearAddForm(); toast(`Patient "${name}" added ✅`);
         };
-        window.clearAddForm = () => { ['pName', 'pPhone', 'pAmount'].forEach(id => document.getElementById(id).value = ''); document.getElementById('pSessions').value = 12; document.getElementById('sessVal').textContent = 12; };
+        window.clearAddForm = () => { ['pName', 'pPhone', 'pAmount'].forEach(id => document.getElementById(id).value = ''); document.getElementById('pSessions').value = 0; document.getElementById('sessVal').textContent = 0; };
 
         /* ── PHYSIO SLOT CHECK ── */
         function getPhysioCountAtSlot(date, time, excludeBookedAt = null) {
@@ -2658,13 +2678,14 @@
             const sType = document.getElementById('bookType').value;
             const warning = document.getElementById('physioWarning');
             const roomGroup = document.getElementById('roomAssignGroup');
-            // Show room assignment for physio sessions
-            if (sType === 'Physiotherapy' || sType === 'Rehabilitation' || sType === 'Assessment' ||
-                sType === 'Re-Assessment' || sType === 'Half Body Recovery' || sType === 'Full Body Recovery') {
+            // Show room assignment for all session types except rehabilitation.
+            if (requiresRoom(sType)) {
                 roomGroup.style.display = 'block';
                 updateRoomAvailInfo();
             } else {
                 roomGroup.style.display = 'none';
+                document.getElementById('bookRoom').value = '';
+                document.getElementById('roomAvailInfo').textContent = '';
             }
             if (sType !== 'Physiotherapy') { warning.classList.remove('show'); return; }
             const date = document.getElementById('bookDate').value;
@@ -2688,18 +2709,24 @@
             const hour = document.getElementById('bookHour').value, min = document.getElementById('bookMin').value, ampm = document.getElementById('bookAmPm').value;
             const time = `${hour}:${min} ${ampm}`;
             if (!date) { document.getElementById('roomAvailInfo').textContent = ''; return; }
-            const roomA = getRoomOccupiedAt('Room A', date, time);
-            const roomB = getRoomOccupiedAt('Room B', date, time);
+            const sType = document.getElementById('bookType').value;
+            const roomA = getRoomOccupiedAt('Room A', date, time, sType);
+            const roomB = getRoomOccupiedAt('Room B', date, time, sType);
             const aStatus = roomA ? `Room A: 🔴 Occupied (${roomA})` : 'Room A: 🟢 Free';
             const bStatus = roomB ? `Room B: 🔴 Occupied (${roomB})` : 'Room B: 🟢 Free';
             document.getElementById('roomAvailInfo').textContent = `${aStatus}   ${bStatus}`;
         }
 
-        function getRoomOccupiedAt(room, date, time, excludeBookedAt = null) {
+        function getRoomOccupiedAt(room, date, time, sessionType, excludeBookedAt = null) {
+            const slotStart = timeToMinutes(time);
+            const slotEnd = slotStart + getSessionDurationMinutes(sessionType);
             for (const p of patients) {
                 for (const h of (p.history || [])) {
                     if (h.bookedAt === excludeBookedAt) continue;
-                    if (h.room === room && h.date === date && h.time === time) return p.name;
+                    if (h.room !== room || h.date !== date) continue;
+                    const existingStart = timeToMinutes(h.time);
+                    const existingEnd = existingStart + getSessionDurationMinutes(h.sessionType);
+                    if (isOverlapping(slotStart, slotEnd, existingStart, existingEnd)) return p.name;
                 }
             }
             return null;
@@ -2729,8 +2756,27 @@
             document.getElementById('selPtInfo').textContent = (p.phone || '—') + ' · ' + p.doctor + ' · ' + (p.time || '—');
             document.getElementById('selPtSessions').textContent = p.sessions;
             document.getElementById('selectedPatientInfo').style.display = 'block';
+            enforceAssessmentOnlyIfNeeded(p);
             checkPhysioSlot();
         };
+
+        function hasAssessmentInHistory(patient) {
+            return (patient.history || []).some(h => h.sessionType === 'Assessment');
+        }
+
+        function enforceAssessmentOnlyIfNeeded(patient) {
+            const typeSelect = document.getElementById('bookType');
+            if (!typeSelect) return;
+            const needsAssessment = !(patient.assessmentDone || hasAssessmentInHistory(patient));
+            Array.from(typeSelect.options).forEach(opt => {
+                if (!opt.value) return;
+                opt.disabled = needsAssessment && opt.value !== 'Assessment';
+            });
+            if (needsAssessment && typeSelect.value && typeSelect.value !== 'Assessment') {
+                typeSelect.value = 'Assessment';
+            }
+            checkPhysioSlot();
+        }
 
         window.confirmBooking = async () => {
             if (!bookingPatientId) { toast('Please select a patient first', true); return; }
@@ -2743,6 +2789,7 @@
             const room = document.getElementById('bookRoom').value;
             if (!date) { toast('Please select a date', true); return; }
             if (!sType) { toast('Please select a session type', true); return; }
+            if (!doctor) { toast('Please select a doctor', true); return; }
 
             // Physio slot enforcement
             if (sType === 'Physiotherapy') {
@@ -2751,18 +2798,36 @@
             }
 
             const p = patients.find(x => x.firestoreId === bookingPatientId);
-            if (p.sessions <= 0) { toast('No sessions left for ' + p.name, true); return; }
+            if (!p) return;
+            const needsAssessment = !(p.assessmentDone || hasAssessmentInHistory(p));
+            if (needsAssessment && sType !== 'Assessment') {
+                toast('This patient must complete Assessment first.', true);
+                return;
+            }
+            if (requiresRoom(sType)) {
+                if (!room) { toast('Please choose a room for this session type.', true); return; }
+                const conflict = getRoomOccupiedAt(room, date, time, sType);
+                if (conflict) { toast(`${room} is already occupied in this time window.`, true); return; }
+            }
+            const shouldConsumePackage = !NON_PACKAGE_TYPES.has(sType);
+            if (shouldConsumePackage && p.sessions <= 0) { toast('No sessions left for ' + p.name, true); return; }
 
             const entry = { date, time, doctor: doctor || p.doctor, notes, sessionType: sType, bookedAt: Date.now() };
-            if (room) entry.room = room;
+            if (requiresRoom(sType) && room) entry.room = room;
 
             const newHistory = [entry, ...(p.history || [])];
-            const updated = { ...p, sessions: p.sessions - 1, history: newHistory };
+            const updated = {
+                ...p,
+                sessions: shouldConsumePackage ? p.sessions - 1 : p.sessions,
+                assessmentDone: p.assessmentDone || sType === 'Assessment',
+                history: newHistory
+            };
             await saveToFirestore(updated);
             document.getElementById('selPtSessions').textContent = updated.sessions;
             document.getElementById('bookNotes').value = '';
             document.getElementById('bookType').value = '';
             document.getElementById('bookRoom').value = '';
+            enforceAssessmentOnlyIfNeeded(updated);
             document.getElementById('roomAssignGroup').style.display = 'none';
             document.getElementById('physioWarning').classList.remove('show');
             toast(`Session booked for ${p.name} on ${fmtDate(date)} at ${fmtTime(time)} ✅`);
@@ -2779,6 +2844,8 @@
             document.getElementById('physioWarning').classList.remove('show');
             document.getElementById('roomAssignGroup').style.display = 'none';
             document.getElementById('bookRoom').value = '';
+            const typeSelect = document.getElementById('bookType');
+            Array.from(typeSelect.options).forEach(opt => { opt.disabled = false; });
         };
 
         /* PROFILES */
@@ -2847,7 +2914,7 @@
       <div class="timeline-item">
         <div class="tl-dot">📋</div>
         <div class="tl-info">
-          <div class="tl-date">${fmtDate(h.date)} &nbsp;·&nbsp; ${fmtTime(h.time)}${h.room ? ` &nbsp;·&nbsp; <span style="color:var(--teal)">${h.room}</span>` : ''}</div>
+          <div class="tl-date">${fmtDate(h.date)} &nbsp;·&nbsp; ${fmtTimeRange(h.time, h.sessionType)}${h.room ? ` &nbsp;·&nbsp; <span style="color:var(--teal)">${h.room}</span>` : ''}</div>
           <div class="tl-sub">${h.doctor || p.doctor}${h.sessionType ? ' · <span style="color:var(--purple)">' + h.sessionType + '</span>' : ''}${h.notes ? ' · <em style="color:var(--text-muted)">' + h.notes + '</em>' : ''}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
@@ -2953,7 +3020,7 @@
             if (!sessions.length) { container.innerHTML += `<div class="sched-empty"><div class="se-icon">🗓️</div><p>No sessions scheduled for this day.</p></div>`; return; }
             container.innerHTML += sessions.map(s => `
     <div class="sched-slot" id="slot-${s.bookedAt}">
-      <div class="sched-time">${fmtTime(s.time)}</div>
+      <div class="sched-time">${fmtTimeRange(s.time, s.sessionType)}</div>
       <div class="sched-slot-info">
         <div class="sched-pt-name">${s.patientName}</div>
         <div class="sched-pt-sub">📞 ${s.patientPhone}${s.sessionType ? ' · <span style="color:var(--purple)">' + s.sessionType + '</span>' : ''}${s.room ? ' · <span style="color:var(--teal)">' + s.room + '</span>' : ''}</div>
@@ -3027,7 +3094,7 @@
       </div>
       ${sessions.map(s => `
         <div class="daily-session-row">
-          <div class="dsr-time">${fmtTime(s.time)}</div>
+          <div class="dsr-time">${fmtTimeRange(s.time, s.sessionType)}</div>
           <div class="dsr-info">
             <div class="dsr-name">${s.patientName}</div>
             <div class="dsr-sub">📞 ${s.patientPhone}${s.sessionType ? ' · <span style="color:var(--purple)">' + s.sessionType + '</span>' : ''}${s.room ? ' · <span style="color:var(--teal)">' + s.room + '</span>' : ''}</div>
@@ -3082,7 +3149,7 @@
                         : sessions.map(s => `
             <div class="room-slot occupied">
               <div class="rs-dot occ"></div>
-              <div class="rs-time occ">${fmtTime(s.time)}</div>
+              <div class="rs-time occ">${fmtTimeRange(s.time, s.sessionType)}</div>
               <div class="rs-info"><strong>${s.patientName}</strong><br><span style="font-size:11px;color:var(--text-dim);">${s.sessionType || 'Session'} · ${s.doctor}</span></div>
             </div>`).join('')}
       </div>
@@ -3188,7 +3255,14 @@
             const newTime = `${hour}:${min} ${ampm}`;
             const newDoc = document.getElementById('editDoctor').value, newType = document.getElementById('editType').value,
                 newNotes = document.getElementById('editNotes').value.trim(), newRoom = document.getElementById('editRoom').value;
-            const newHistory = (p.history || []).map(h => h.bookedAt === bookedAt ? { ...h, date: newDate, time: newTime, doctor: newDoc, sessionType: newType, notes: newNotes, room: newRoom } : h);
+            if (requiresRoom(newType) && !newRoom) { toast('Please choose a room for this session type.', true); return; }
+            if (!requiresRoom(newType) && newRoom) { toast('Rehabilitation does not require room assignment.', true); return; }
+            if (requiresRoom(newType)) {
+                const conflict = getRoomOccupiedAt(newRoom, newDate, newTime, newType, bookedAt);
+                if (conflict) { toast(`${newRoom} is occupied in this time window.`, true); return; }
+            }
+            const normalizedRoom = requiresRoom(newType) ? newRoom : '';
+            const newHistory = (p.history || []).map(h => h.bookedAt === bookedAt ? { ...h, date: newDate, time: newTime, doctor: newDoc, sessionType: newType, notes: newNotes, room: normalizedRoom } : h);
             await saveToFirestore({ ...p, history: newHistory });
             closeEditModal(); toast('Session updated ✅');
         };
@@ -3210,10 +3284,33 @@
             if (m) { let h = parseInt(m[1]); const min = parseInt(m[2]), ap = m[3].toUpperCase(); if (ap === 'AM' && h === 12) h = 0; if (ap === 'PM' && h !== 12) h += 12; return h * 60 + min; }
             const p = t.split(':'); return parseInt(p[0] || 0) * 60 + parseInt(p[1] || 0);
         }
+        function getSessionDurationMinutes(sessionType) {
+            return SESSION_DURATION_MINUTES[sessionType] || 60;
+        }
+        function isOverlapping(startA, endA, startB, endB) {
+            return startA < endB && startB < endA;
+        }
+        function requiresRoom(sessionType) {
+            return SESSION_TYPES.includes(sessionType) && sessionType !== 'Rehabilitation';
+        }
+        function minutesToTime(totalMinutes) {
+            let mins = ((totalMinutes % 1440) + 1440) % 1440;
+            let h24 = Math.floor(mins / 60);
+            const mm = String(mins % 60).padStart(2, '0');
+            const ampm = h24 >= 12 ? 'PM' : 'AM';
+            let h12 = h24 % 12;
+            if (h12 === 0) h12 = 12;
+            return `${h12}:${mm} ${ampm}`;
+        }
         function toDateStr(d) { const yyyy = d.getFullYear(), mm = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0'); return `${yyyy}-${mm}-${dd}`; }
         function localDateStr(d) { return toDateStr(d); }
         function fmtDate(d) { if (!d) return '—'; const [y, m, day] = d.split('-'); const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; return `${parseInt(day)} ${months[parseInt(m) - 1]} ${y}`; }
         function fmtTime(t) { if (!t || t === '—') return '—'; if (t.includes('AM') || t.includes('PM')) return t; const [hStr, mStr] = t.split(':'); let h = parseInt(hStr); const ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return `${h}:${mStr} ${ampm}`; }
+        function fmtTimeRange(startTime, sessionType) {
+            if (!startTime || startTime === '—') return '—';
+            const end = timeToMinutes(startTime) + getSessionDurationMinutes(sessionType);
+            return `${fmtTime(startTime)} → ${fmtTime(minutesToTime(end))}`;
+        }
         function toast(msg, err = false) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast' + (err ? ' error' : '') + ' show'; setTimeout(() => t.classList.remove('show'), 3200); }
         window.toast = toast;
 
