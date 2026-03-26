@@ -2236,17 +2236,6 @@
                         <div class="form-group"><label>Mobile Phone</label><input type="text" id="pPhone"
                                 placeholder="e.g. 01012345678"></div>
                         <div class="form-group"><label>Assessment Doctor (Primary)</label><select id="pPrimaryDoctor"></select></div>
-                        <div class="form-group"><label>Assigned Doctor (After Assessment)</label><select id="pDoctor"></select></div>
-                        <div class="form-group"><label>Treatment Plan</label><select id="pPlan">
-                                <option value="Mixed">Mixed (Physio + Rehab)</option>
-                                <option value="Physio">Physio only</option>
-                                <option value="Rehabilitation">Rehab only</option>
-                            </select></div>
-                        <div class="form-group"><label>First Session Type</label><select id="pInitialType">
-                                <option value="Assessment">Assessment</option>
-                                <option value="Half Body Recovery">Half Body Recovery</option>
-                                <option value="Full Body Recovery">Full Body Recovery</option>
-                            </select></div>
                         <div class="form-group full">
                             <label>Sessions Subscribed &nbsp;<span class="sessions-val" id="sessVal">0</span></label>
                             <input type="range" min="0" max="24" value="0" id="pSessions"
@@ -2657,7 +2646,7 @@
         };
 
         function populateSelects() {
-            ['doctorFilter', 'bookDoctor', 'pDoctor', 'pPrimaryDoctor', 'ddAssignedDoctor', 'apDoctorFilter'].forEach(sid => {
+            ['doctorFilter', 'bookDoctor', 'pPrimaryDoctor', 'ddAssignedDoctor', 'apDoctorFilter'].forEach(sid => {
                 const el = document.getElementById(sid); if (!el) return;
                 if (sid === 'doctorFilter') el.innerHTML = '<option value="">All Doctors</option>';
                 else if (sid === 'apDoctorFilter') el.innerHTML = '<option value="">All Assigned Doctors</option>';
@@ -2726,16 +2715,13 @@
         /* ADD PATIENT */
         window.savePatient = async () => {
             const name = document.getElementById('pName').value.trim(), phone = document.getElementById('pPhone').value.trim(),
-                primaryDoctor = document.getElementById('pPrimaryDoctor').value, doctor = document.getElementById('pDoctor').value,
-                plan = document.getElementById('pPlan').value || 'Mixed',
-                initialSessionType = document.getElementById('pInitialType').value || 'Assessment',
+                primaryDoctor = document.getElementById('pPrimaryDoctor').value,
                 sessions = parseInt(document.getElementById('pSessions').value) || 0,
                 amount = document.getElementById('pAmount').value, time = document.getElementById('pTime').value;
             if (!name) { toast('Please enter a patient name', true); return; }
             if (!primaryDoctor) { toast('Please select an assessment doctor', true); return; }
-            if (!doctor) { toast('Please select a doctor', true); return; }
             const newP = {
-                id: Date.now(), name, phone, primaryDoctor, doctor, plan, initialSessionType,
+                id: Date.now(), name, phone, primaryDoctor, doctor: '', plan: 'Mixed', initialSessionType: 'Assessment',
                 sessions, subscribed: sessions, amount, time, assessmentDone: false,
                 age: '', functionalAssessment: '', injury: '', doctorNotes: '', sessionsNeeded: sessions, history: []
             };
@@ -2743,9 +2729,7 @@
         };
         window.clearAddForm = () => {
             ['pName', 'pPhone', 'pAmount'].forEach(id => document.getElementById(id).value = '');
-            ['pDoctor', 'pPrimaryDoctor'].forEach(id => document.getElementById(id).value = '');
-            document.getElementById('pPlan').value = 'Mixed';
-            document.getElementById('pInitialType').value = 'Assessment';
+            document.getElementById('pPrimaryDoctor').value = '';
             document.getElementById('pSessions').value = 0;
             document.getElementById('sessVal').textContent = 0;
         };
@@ -3084,7 +3068,7 @@
             const hiddenIdEl = document.getElementById('ddPatient');
             const resultsEl = document.getElementById('ddSearchResults');
             if (!searchEl || !hiddenIdEl) return;
-            const pending = patients.filter(p => !hasInitialSessionDone(p));
+            const pending = patients.filter(p => getInitialSessionType(p) === 'Assessment' && !hasInitialSessionDone(p));
             if (!pending.length) {
                 searchEl.value = '';
                 hiddenIdEl.value = '';
@@ -3117,7 +3101,7 @@
         window.loadDoctorDetailPatient = function () {
             const searchVal = document.getElementById('ddPatientSearch').value.trim().toLowerCase();
             const resultsEl = document.getElementById('ddSearchResults');
-            const pending = patients.filter(p => !hasInitialSessionDone(p));
+            const pending = patients.filter(p => getInitialSessionType(p) === 'Assessment' && !hasInitialSessionDone(p));
             const matches = !searchVal ? [] : pending.filter(p => (p.name || '').toLowerCase().includes(searchVal));
             if (resultsEl) {
                 if (!searchVal) resultsEl.innerHTML = '';
