@@ -2335,9 +2335,8 @@
                     <div class="form-grid">
                         <div class="form-group full">
                             <label>Patient</label>
-                            <select id="ddPatient" onchange="loadDoctorDetailPatient()">
-                                <option value="">Select patient...</option>
-                            </select>
+                            <input type="text" id="ddPatientSearch" oninput="loadDoctorDetailPatient()" placeholder="Search patient by name...">
+                            <input type="hidden" id="ddPatient">
                         </div>
                         <div class="form-group"><label>Name</label><input type="text" id="ddName" readonly></div>
                         <div class="form-group"><label>Age</label><input type="number" id="ddAge" min="0" placeholder="e.g. 35"></div>
@@ -3059,11 +3058,13 @@
 
         /* DOCTORS DETAILS */
         window.renderDoctorDetailsSection = function () {
-            const sel = document.getElementById('ddPatient');
-            if (!sel) return;
+            const searchEl = document.getElementById('ddPatientSearch');
+            const hiddenIdEl = document.getElementById('ddPatient');
+            if (!searchEl || !hiddenIdEl) return;
             const pending = patients.filter(p => !hasInitialSessionDone(p));
-            sel.innerHTML = '<option value="">Select patient...</option>' + pending.map(p => `<option value="${p.firestoreId}">${p.name} · ${getInitialSessionType(p)} · Primary: ${p.primaryDoctor || p.doctor || '—'}</option>`).join('');
             if (!pending.length) {
+                searchEl.value = '';
+                hiddenIdEl.value = '';
                 document.getElementById('ddName').value = '';
                 document.getElementById('ddAge').value = '';
                 document.getElementById('ddFunctional').value = '';
@@ -3076,9 +3077,25 @@
         };
 
         window.loadDoctorDetailPatient = function () {
-            const fid = document.getElementById('ddPatient').value;
+            const searchVal = document.getElementById('ddPatientSearch').value.trim().toLowerCase();
+            const pending = patients.filter(p => !hasInitialSessionDone(p));
+            const match = pending.find(p => (p.name || '').toLowerCase() === searchVal)
+                || pending.find(p => (p.name || '').toLowerCase().includes(searchVal));
+            const fid = match ? match.firestoreId : '';
+            document.getElementById('ddPatient').value = fid;
             const p = patients.find(x => x.firestoreId === fid);
-            if (!p) return;
+            if (!p) {
+                document.getElementById('ddName').value = '';
+                document.getElementById('ddAge').value = '';
+                document.getElementById('ddFunctional').value = '';
+                document.getElementById('ddInjury').value = '';
+                document.getElementById('ddNotes').value = '';
+                document.getElementById('ddAssignedDoctor').value = '';
+                document.getElementById('ddPlan').value = 'Mixed';
+                document.getElementById('ddSessionsNeeded').value = '';
+                return;
+            }
+            document.getElementById('ddPatientSearch').value = p.name || '';
             document.getElementById('ddName').value = p.name || '';
             document.getElementById('ddAge').value = p.age || '';
             document.getElementById('ddFunctional').value = p.functionalAssessment || '';
