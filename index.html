@@ -2023,6 +2023,8 @@
             </div>
             <div class="nav-item" onclick="showPanel('rooms',this)"><span class="nav-icon">🏠</span> Room Occupation
             </div>
+            <div class="nav-item" onclick="showPanel('doctorDetails',this)"><span class="nav-icon">📝</span> Doctors Details</div>
+            <div class="nav-item" onclick="showPanel('assignedPatients',this)"><span class="nav-icon">📌</span> Assigned Patients</div>
             <div class="nav-label">Team</div>
             <div class="nav-item" onclick="showPanel('doctors',this)"><span class="nav-icon">🩺</span> Associated
                 Doctors</div>
@@ -2239,10 +2241,11 @@
                                 <option value="Physio">Physio only</option>
                                 <option value="Rehabilitation">Rehab only</option>
                             </select></div>
-                        <div class="form-group"><label>First Session Type</label>
-                            <input type="text" value="Assessment (required)" disabled
-                                style="background:var(--elevated);border:1px solid var(--border);color:var(--text-dim);padding:11px 13px;border-radius:10px;font-size:13.5px;font-family:inherit;">
-                        </div>
+                        <div class="form-group"><label>First Session Type</label><select id="pInitialType">
+                                <option value="Assessment">Assessment</option>
+                                <option value="Half Body Recovery">Half Body Recovery</option>
+                                <option value="Full Body Recovery">Full Body Recovery</option>
+                            </select></div>
                         <div class="form-group full">
                             <label>Sessions Subscribed &nbsp;<span class="sessions-val" id="sessVal">0</span></label>
                             <input type="range" min="0" max="24" value="0" id="pSessions"
@@ -2322,6 +2325,44 @@
                     <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text-dim);">📊 Full Day
                         Timeline</div>
                     <div id="roomTimeline"></div>
+                </div>
+            </div>
+
+            <!-- DOCTORS DETAILS -->
+            <div class="panel" id="panel-doctorDetails">
+                <div class="form-card">
+                    <h3>📝 Doctors Details</h3>
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label>Patient</label>
+                            <select id="ddPatient" onchange="loadDoctorDetailPatient()">
+                                <option value="">Select patient...</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Name</label><input type="text" id="ddName" readonly></div>
+                        <div class="form-group"><label>Age</label><input type="number" id="ddAge" min="0" placeholder="e.g. 35"></div>
+                        <div class="form-group full"><label>Functional Assessment</label><input type="text" id="ddFunctional" placeholder="Doctor notes functional assessment"></div>
+                        <div class="form-group full"><label>Injury</label><input type="text" id="ddInjury" placeholder="Injury details"></div>
+                        <div class="form-group full"><label>Notes</label><input type="text" id="ddNotes" placeholder="Any additional notes"></div>
+                        <div class="form-group"><label>Assign Doctor To Work With</label><select id="ddAssignedDoctor"></select></div>
+                        <div class="form-group"><label>Sessions Needed</label><input type="number" id="ddSessionsNeeded" min="0" placeholder="e.g. 12"></div>
+                        <div class="form-group"><label>Session Type Plan</label><select id="ddPlan">
+                                <option value="Mixed">Mixed (Physio + Rehab)</option>
+                                <option value="Physio">Physio only</option>
+                                <option value="Rehabilitation">Rehab only</option>
+                            </select></div>
+                    </div>
+                    <div style="margin-top:18px;display:flex;gap:10px;">
+                        <button class="btn btn-primary" onclick="saveDoctorDetails()">💾 Save Doctor Details</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ASSIGNED PATIENTS -->
+            <div class="panel" id="panel-assignedPatients">
+                <div class="form-card">
+                    <h3>📌 Assigned Patients (After Assessment)</h3>
+                    <div id="assignedPatientsList"></div>
                 </div>
             </div>
 
@@ -2508,7 +2549,7 @@
         const SESSION_TYPES = ['Physiotherapy', 'Rehabilitation', 'Assessment', 'Re-Assessment', 'Half Body Recovery', 'Full Body Recovery'];
         const SESSION_DURATION_MINUTES = { Rehabilitation: 90, Assessment: 30, 'Re-Assessment': 30 };
         const NON_PACKAGE_TYPES = new Set(['Assessment']);
-        const TITLES = { patients: 'Patients List', profiles: 'Patient Profiles', booking: 'Book a Session', add: 'Add New Patient', doctors: 'Associated Doctors', schedule: 'Schedule', daily: 'Daily Overview', rooms: 'Room Occupation' };
+        const TITLES = { patients: 'Patients List', profiles: 'Patient Profiles', booking: 'Book a Session', add: 'Add New Patient', doctors: 'Associated Doctors', schedule: 'Schedule', daily: 'Daily Overview', rooms: 'Room Occupation', doctorDetails: 'Doctors Details', assignedPatients: 'Assigned Patients' };
 
         let patients = [];
         let bookingPatientId = null;
@@ -2560,6 +2601,8 @@
                 setSyncing(false);
                 renderTable(); renderStats();
                 renderDoctors(); renderSchedDoctorPicker();
+                renderDoctorDetailsSection();
+                renderAssignedPatients();
                 if (schedActiveDoctor) renderSchedWeek();
                 // refresh daily & room if open
                 const aid = (document.querySelector('.panel.active') || {}).id || '';
@@ -2597,11 +2640,13 @@
             if (id === 'schedule') { closeSchedView(); renderSchedDoctorPicker(); }
             if (id === 'daily') renderDailyOverview();
             if (id === 'rooms') renderRoomOccupation();
+            if (id === 'doctorDetails') renderDoctorDetailsSection();
+            if (id === 'assignedPatients') renderAssignedPatients();
             closeSidebar();
         };
 
         function populateSelects() {
-            ['doctorFilter', 'bookDoctor', 'pDoctor', 'pPrimaryDoctor'].forEach(sid => {
+            ['doctorFilter', 'bookDoctor', 'pDoctor', 'pPrimaryDoctor', 'ddAssignedDoctor'].forEach(sid => {
                 const el = document.getElementById(sid); if (!el) return;
                 el.innerHTML = sid === 'doctorFilter' ? '<option value="">All Doctors</option>' : '<option value="">Select Doctor</option>';
                 DOCTORS.forEach(d => el.innerHTML += `<option>${d}</option>`);
@@ -2670,18 +2715,24 @@
             const name = document.getElementById('pName').value.trim(), phone = document.getElementById('pPhone').value.trim(),
                 primaryDoctor = document.getElementById('pPrimaryDoctor').value, doctor = document.getElementById('pDoctor').value,
                 plan = document.getElementById('pPlan').value || 'Mixed',
+                initialSessionType = document.getElementById('pInitialType').value || 'Assessment',
                 sessions = parseInt(document.getElementById('pSessions').value) || 0,
                 amount = document.getElementById('pAmount').value, time = document.getElementById('pTime').value;
             if (!name) { toast('Please enter a patient name', true); return; }
             if (!primaryDoctor) { toast('Please select an assessment doctor', true); return; }
             if (!doctor) { toast('Please select a doctor', true); return; }
-            const newP = { id: Date.now(), name, phone, primaryDoctor, doctor, plan, sessions, subscribed: sessions, amount, time, assessmentDone: false, history: [] };
+            const newP = {
+                id: Date.now(), name, phone, primaryDoctor, doctor, plan, initialSessionType,
+                sessions, subscribed: sessions, amount, time, assessmentDone: false,
+                age: '', functionalAssessment: '', injury: '', doctorNotes: '', sessionsNeeded: sessions, history: []
+            };
             await saveToFirestore(newP); clearAddForm(); toast(`Patient "${name}" added ✅`);
         };
         window.clearAddForm = () => {
             ['pName', 'pPhone', 'pAmount'].forEach(id => document.getElementById(id).value = '');
             ['pDoctor', 'pPrimaryDoctor'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('pPlan').value = 'Mixed';
+            document.getElementById('pInitialType').value = 'Assessment';
             document.getElementById('pSessions').value = 0;
             document.getElementById('sessVal').textContent = 0;
         };
@@ -2706,7 +2757,8 @@
             const roomSelect = document.getElementById('bookRoom');
             const docSelect = document.getElementById('bookDoctor');
             const activePatient = patients.find(x => x.firestoreId === bookingPatientId);
-            if (activePatient && sType === 'Assessment') {
+            const initialType = activePatient ? getInitialSessionType(activePatient) : 'Assessment';
+            if (activePatient && sType === initialType && !hasInitialSessionDone(activePatient)) {
                 docSelect.value = activePatient.primaryDoctor || activePatient.doctor || '';
                 docSelect.disabled = true;
             } else {
@@ -2787,7 +2839,7 @@
             bookingPatientId = fid;
             document.getElementById('bookSearch').value = p.name;
             document.getElementById('ptDropdown').classList.remove('open');
-            const needsAssessment = !(p.assessmentDone || hasAssessmentInHistory(p));
+            const needsAssessment = !hasInitialSessionDone(p);
             document.getElementById('bookDoctor').value = needsAssessment ? (p.primaryDoctor || p.doctor) : p.doctor;
             document.getElementById('selPtName').textContent = p.name;
             document.getElementById('selPtInfo').textContent = (p.phone || '—') + ' · Primary: ' + (p.primaryDoctor || p.doctor || '—') + ' · Assigned: ' + (p.doctor || '—');
@@ -2800,6 +2852,13 @@
         function hasAssessmentInHistory(patient) {
             return (patient.history || []).some(h => h.sessionType === 'Assessment');
         }
+        function getInitialSessionType(patient) {
+            return patient.initialSessionType || 'Assessment';
+        }
+        function hasInitialSessionDone(patient) {
+            const firstType = getInitialSessionType(patient);
+            return (patient.history || []).some(h => h.sessionType === firstType);
+        }
 
         function getAllowedSessionTypesByPlan(plan) {
             if (plan === 'Physio') return new Set(['Physiotherapy', 'Half Body Recovery', 'Full Body Recovery']);
@@ -2810,16 +2869,17 @@
         function enforceAssessmentOnlyIfNeeded(patient) {
             const typeSelect = document.getElementById('bookType');
             if (!typeSelect) return;
-            const needsAssessment = !(patient.assessmentDone || hasAssessmentInHistory(patient));
+            const initialType = getInitialSessionType(patient);
+            const needsAssessment = !hasInitialSessionDone(patient);
             const hasAssessment = !needsAssessment;
             const allowedByPlan = getAllowedSessionTypesByPlan(patient.plan || 'Mixed');
             Array.from(typeSelect.options).forEach(opt => {
                 if (!opt.value) return;
                 if (needsAssessment) {
-                    opt.disabled = opt.value !== 'Assessment';
+                    opt.disabled = opt.value !== initialType;
                     return;
                 }
-                if (opt.value === 'Assessment') {
+                if (opt.value === initialType) {
                     opt.disabled = hasAssessment; // exactly one assessment per patient
                     return;
                 }
@@ -2829,10 +2889,10 @@
                 }
                 opt.disabled = !allowedByPlan.has(opt.value);
             });
-            if ((needsAssessment && typeSelect.value && typeSelect.value !== 'Assessment') || (hasAssessment && typeSelect.value === 'Assessment')) {
-                typeSelect.value = 'Assessment';
+            if ((needsAssessment && typeSelect.value && typeSelect.value !== initialType) || (hasAssessment && typeSelect.value === initialType)) {
+                typeSelect.value = initialType;
             }
-            if (hasAssessment && typeSelect.value === 'Assessment') typeSelect.value = '';
+            if (hasAssessment && typeSelect.value === initialType) typeSelect.value = '';
             checkPhysioSlot();
         }
 
@@ -2857,13 +2917,14 @@
 
             const p = patients.find(x => x.firestoreId === bookingPatientId);
             if (!p) return;
-            const needsAssessment = !(p.assessmentDone || hasAssessmentInHistory(p));
-            if (needsAssessment && sType !== 'Assessment') {
-                toast('This patient must complete Assessment first.', true);
+            const firstType = getInitialSessionType(p);
+            const needsAssessment = !hasInitialSessionDone(p);
+            if (needsAssessment && sType !== firstType) {
+                toast(`This patient must complete ${firstType} first.`, true);
                 return;
             }
-            if (!needsAssessment && sType === 'Assessment') {
-                toast('Assessment already completed for this patient.', true);
+            if (!needsAssessment && sType === firstType) {
+                toast(`${firstType} already completed for this patient.`, true);
                 return;
             }
             const allowedByPlan = getAllowedSessionTypesByPlan(p.plan || 'Mixed');
@@ -2879,7 +2940,7 @@
             const shouldConsumePackage = !NON_PACKAGE_TYPES.has(sType);
             if (shouldConsumePackage && p.sessions <= 0) { toast('No sessions left for ' + p.name, true); return; }
 
-            const sessionDoctor = sType === 'Assessment' ? (p.primaryDoctor || p.doctor) : (doctor || p.doctor);
+            const sessionDoctor = (needsAssessment && sType === firstType) ? (p.primaryDoctor || p.doctor) : (doctor || p.doctor);
             const entry = { date, time, doctor: sessionDoctor, notes, sessionType: sType, bookedAt: Date.now() };
             if (requiresRoom(sType) && room) entry.room = room;
 
@@ -2887,7 +2948,7 @@
             const updated = {
                 ...p,
                 sessions: shouldConsumePackage ? p.sessions - 1 : p.sessions,
-                assessmentDone: p.assessmentDone || sType === 'Assessment',
+                assessmentDone: p.assessmentDone || sType === firstType,
                 history: newHistory
             };
             await saveToFirestore(updated);
@@ -2995,6 +3056,81 @@
         }
 
         window.closeProfileDetail = () => { document.getElementById('profilesGrid').style.display = 'block'; document.getElementById('profileDetail').style.display = 'none'; renderProfiles(); };
+
+        /* DOCTORS DETAILS */
+        window.renderDoctorDetailsSection = function () {
+            const sel = document.getElementById('ddPatient');
+            if (!sel) return;
+            const pending = patients.filter(p => !hasInitialSessionDone(p));
+            sel.innerHTML = '<option value="">Select patient...</option>' + pending.map(p => `<option value="${p.firestoreId}">${p.name} · ${getInitialSessionType(p)} · Primary: ${p.primaryDoctor || p.doctor || '—'}</option>`).join('');
+            if (!pending.length) {
+                document.getElementById('ddName').value = '';
+                document.getElementById('ddAge').value = '';
+                document.getElementById('ddFunctional').value = '';
+                document.getElementById('ddInjury').value = '';
+                document.getElementById('ddNotes').value = '';
+                document.getElementById('ddSessionsNeeded').value = '';
+                document.getElementById('ddAssignedDoctor').value = '';
+                document.getElementById('ddPlan').value = 'Mixed';
+            }
+        };
+
+        window.loadDoctorDetailPatient = function () {
+            const fid = document.getElementById('ddPatient').value;
+            const p = patients.find(x => x.firestoreId === fid);
+            if (!p) return;
+            document.getElementById('ddName').value = p.name || '';
+            document.getElementById('ddAge').value = p.age || '';
+            document.getElementById('ddFunctional').value = p.functionalAssessment || '';
+            document.getElementById('ddInjury').value = p.injury || '';
+            document.getElementById('ddNotes').value = p.doctorNotes || '';
+            document.getElementById('ddAssignedDoctor').value = p.doctor || '';
+            document.getElementById('ddPlan').value = p.plan || 'Mixed';
+            document.getElementById('ddSessionsNeeded').value = p.sessionsNeeded || p.subscribed || 0;
+        };
+
+        window.saveDoctorDetails = async () => {
+            const fid = document.getElementById('ddPatient').value;
+            const p = patients.find(x => x.firestoreId === fid);
+            if (!p) { toast('Please select a patient', true); return; }
+            const doctor = document.getElementById('ddAssignedDoctor').value;
+            if (!doctor) { toast('Please choose assigned doctor', true); return; }
+            const sessionsNeeded = Math.max(0, parseInt(document.getElementById('ddSessionsNeeded').value) || 0);
+            const updated = {
+                ...p,
+                age: document.getElementById('ddAge').value.trim(),
+                functionalAssessment: document.getElementById('ddFunctional').value.trim(),
+                injury: document.getElementById('ddInjury').value.trim(),
+                doctorNotes: document.getElementById('ddNotes').value.trim(),
+                doctor,
+                plan: document.getElementById('ddPlan').value || 'Mixed',
+                sessionsNeeded,
+                subscribed: sessionsNeeded,
+                sessions: sessionsNeeded
+            };
+            await saveToFirestore(updated);
+            toast(`Doctor details saved for ${p.name} ✅`);
+            renderDoctorDetailsSection();
+            renderAssignedPatients();
+        };
+
+        window.renderAssignedPatients = function () {
+            const wrap = document.getElementById('assignedPatientsList');
+            if (!wrap) return;
+            const done = patients.filter(p => hasInitialSessionDone(p));
+            if (!done.length) {
+                wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">📌</div><p>No assigned patients yet. Complete initial session first.</p></div>`;
+                return;
+            }
+            wrap.innerHTML = done.map(p => `
+    <div class="sched-slot" style="margin-bottom:10px;">
+      <div class="sched-slot-info">
+        <div class="sched-pt-name">${p.name}</div>
+        <div class="sched-pt-sub">Primary: ${p.primaryDoctor || p.doctor || '—'} · Assigned: ${p.doctor || '—'}</div>
+        <div class="sched-pt-sub">Plan: <span style="color:var(--purple)">${p.plan || 'Mixed'}</span> · Sessions needed: <span style="color:var(--accent)">${p.sessionsNeeded || p.subscribed || 0}</span></div>
+      </div>
+    </div>`).join('');
+        };
 
         /* DOCTORS */
         window.renderDoctors = function () {
@@ -3331,10 +3467,11 @@
             const newTime = `${hour}:${min} ${ampm}`;
             const newDoc = document.getElementById('editDoctor').value, newType = document.getElementById('editType').value,
                 newNotes = document.getElementById('editNotes').value.trim(), newRoom = document.getElementById('editRoom').value;
+            const firstType = getInitialSessionType(p);
             const targetRoom = newType === 'Assessment' ? 'Room A' : newRoom;
-            if (newType === 'Assessment') {
-                const otherAssessment = (p.history || []).some(h => h.bookedAt !== bookedAt && h.sessionType === 'Assessment');
-                if (otherAssessment) { toast('Only one Assessment is allowed per patient.', true); return; }
+            if (newType === firstType) {
+                const sameTypeExists = (p.history || []).some(h => h.bookedAt !== bookedAt && h.sessionType === firstType);
+                if (sameTypeExists) { toast(`Only one ${firstType} is allowed per patient.`, true); return; }
             }
             if (requiresRoom(newType) && !targetRoom) { toast('Please choose a room for this session type.', true); return; }
             if (!requiresRoom(newType) && newRoom) { toast('Rehabilitation does not require room assignment.', true); return; }
@@ -3343,7 +3480,7 @@
                 if (conflict) { toast(`${targetRoom} is occupied in this time window.`, true); return; }
             }
             const normalizedRoom = newType === 'Assessment' ? 'Room A' : (requiresRoom(newType) ? newRoom : '');
-            const normalizedDoctor = newType === 'Assessment' ? (p.primaryDoctor || p.doctor || newDoc) : newDoc;
+            const normalizedDoctor = newType === firstType ? (p.primaryDoctor || p.doctor || newDoc) : newDoc;
             const newHistory = (p.history || []).map(h => h.bookedAt === bookedAt ? { ...h, date: newDate, time: newTime, doctor: normalizedDoctor, sessionType: newType, notes: newNotes, room: normalizedRoom } : h);
             await saveToFirestore({ ...p, history: newHistory });
             closeEditModal(); toast('Session updated ✅');
@@ -3352,8 +3489,8 @@
 
         /* EXPORT */
         window.exportToCSV = () => {
-            let csv = 'Name,Phone,PrimaryDoctor,AssignedDoctor,TreatmentPlan,Slot,SessionsLeft,Subscribed,AmountEGP,TotalBooked\n';
-            patients.forEach(p => csv += `${p.name},${p.phone || ''},${p.primaryDoctor || p.doctor || ''},${p.doctor || ''},${p.plan || 'Mixed'},${p.time},${p.sessions},${p.subscribed || 0},${p.amount || 0},${(p.history || []).length}\n`);
+            let csv = 'Name,Phone,PrimaryDoctor,AssignedDoctor,TreatmentPlan,InitialSessionType,SessionsNeeded,Slot,SessionsLeft,Subscribed,AmountEGP,TotalBooked\n';
+            patients.forEach(p => csv += `${p.name},${p.phone || ''},${p.primaryDoctor || p.doctor || ''},${p.doctor || ''},${p.plan || 'Mixed'},${p.initialSessionType || 'Assessment'},${p.sessionsNeeded || p.subscribed || 0},${p.time},${p.sessions},${p.subscribed || 0},${p.amount || 0},${(p.history || []).length}\n`);
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
             a.download = 'ClinicPro_Export.csv'; a.click();
