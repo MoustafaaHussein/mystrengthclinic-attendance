@@ -2325,7 +2325,7 @@
                     <div class="form-grid">
                         <div class="form-group full">
                             <label>Patient</label>
-                            <input type="text" id="ddPatientSearch" oninput="loadDoctorDetailPatient()" placeholder="Search patient by name..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                            <input type="text" id="ddPatientSearch" oninput="loadDoctorDetailPatient()" placeholder="Search any patient by name..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                             <input type="hidden" id="ddPatient">
                             <div id="ddSearchResults" style="margin-top:8px;"></div>
                         </div>
@@ -2736,7 +2736,6 @@
 
         /* ── PHYSIO SLOT CHECK ── */
         function getPhysioCountAtSlot(date, time, excludeBookedAt = null) {
-            // Count how many physio sessions across ALL doctors are at the exact same date+time
             let count = 0;
             patients.forEach(p => {
                 (p.history || []).forEach(h => {
@@ -2762,7 +2761,6 @@
                 docSelect.disabled = false;
                 if (activePatient && !docSelect.value) docSelect.value = activePatient.doctor || '';
             }
-            // Show room assignment for all session types except rehabilitation.
             if (requiresRoom(sType)) {
                 roomGroup.style.display = sType === 'Assessment' ? 'none' : 'block';
                 if (sType === 'Assessment') roomSelect.value = 'Room A';
@@ -2877,7 +2875,7 @@
                     return;
                 }
                 if (opt.value === initialType) {
-                    opt.disabled = hasAssessment; // exactly one assessment per patient
+                    opt.disabled = hasAssessment;
                     return;
                 }
                 if (opt.value === 'Re-Assessment') {
@@ -2906,7 +2904,6 @@
             if (!sType) { toast('Please select a session type', true); return; }
             if (sType !== 'Assessment' && !doctor) { toast('Please select a doctor', true); return; }
 
-            // Physio slot enforcement
             if (sType === 'Physiotherapy') {
                 const count = getPhysioCountAtSlot(date, time);
                 if (count >= PHYSIO_MAX) { toast(`Physiotherapy slots are full at ${time}! Max ${PHYSIO_MAX} allowed.`, true); return; }
@@ -3064,15 +3061,11 @@
 
         /* DOCTORS DETAILS */
         window.renderDoctorDetailsSection = function () {
-            const searchEl = document.getElementById('ddPatientSearch');
-            const hiddenIdEl = document.getElementById('ddPatient');
-            const resultsEl = document.getElementById('ddSearchResults');
-            if (!searchEl || !hiddenIdEl) return;
-            const pending = patients.filter(p => getInitialSessionType(p) === 'Assessment' && !hasInitialSessionDone(p));
-            if (!pending.length) {
-                searchEl.value = '';
-                hiddenIdEl.value = '';
-                if (resultsEl) resultsEl.innerHTML = '';
+            // Only reset the form if no patient is currently selected
+            const currentFid = document.getElementById('ddPatient').value;
+            if (!currentFid) {
+                document.getElementById('ddPatientSearch').value = '';
+                document.getElementById('ddSearchResults').innerHTML = '';
                 document.getElementById('ddName').value = '';
                 document.getElementById('ddAge').value = '';
                 document.getElementById('ddFunctional').value = '';
@@ -3086,8 +3079,10 @@
 
         window.selectDoctorDetailsPatient = function (fid) {
             document.getElementById('ddPatient').value = fid;
+            document.getElementById('ddSearchResults').innerHTML = '';
             const p = patients.find(x => x.firestoreId === fid);
             if (!p) return;
+            document.getElementById('ddPatientSearch').value = p.name;
             document.getElementById('ddName').value = p.name || '';
             document.getElementById('ddAge').value = p.age || '';
             document.getElementById('ddFunctional').value = p.functionalAssessment || '';
@@ -3101,8 +3096,8 @@
         window.loadDoctorDetailPatient = function () {
             const searchVal = document.getElementById('ddPatientSearch').value.trim().toLowerCase();
             const resultsEl = document.getElementById('ddSearchResults');
-            const pending = patients.filter(p => getInitialSessionType(p) === 'Assessment' && !hasInitialSessionDone(p));
-            const matches = !searchVal ? [] : pending.filter(p => (p.name || '').toLowerCase().includes(searchVal));
+            // Search ALL patients (not just those pending assessment)
+            const matches = !searchVal ? [] : patients.filter(p => (p.name || '').toLowerCase().includes(searchVal));
             if (resultsEl) {
                 if (!searchVal) resultsEl.innerHTML = '';
                 else if (!matches.length) resultsEl.innerHTML = `<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">No patient found.</div>`;
@@ -3110,7 +3105,7 @@
                     resultsEl.innerHTML = matches.slice(0, 8).map(p => `
         <div onclick="selectDoctorDetailsPatient('${p.firestoreId}')" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;background:var(--elevated);">
           <div style="font-size:13px;font-weight:600;">${p.name}</div>
-          <div style="font-size:11px;color:var(--text-dim);">Primary: ${p.primaryDoctor || p.doctor || '—'} · Initial: ${getInitialSessionType(p)}</div>
+          <div style="font-size:11px;color:var(--text-dim);">Primary: ${p.primaryDoctor || p.doctor || '—'} · Assigned: ${p.doctor || '—'} · Plan: ${p.plan || 'Mixed'}</div>
         </div>`).join('');
                 }
             }
@@ -3312,7 +3307,6 @@
             const tabs = document.getElementById('dailyTabs');
             const content = document.getElementById('dailyContent');
 
-            // Gather all sessions for this date grouped by doctor
             const byDoctor = {};
             DOCTORS.forEach(d => { byDoctor[d] = []; });
             patients.forEach(p => {
@@ -3321,16 +3315,11 @@
                 });
             });
 
-            // Filter to doctors who have sessions, unless none then show all
-            const activeDoctors = DOCTORS.filter(d => byDoctor[d].length > 0);
-            const showDoctors = activeDoctors.length > 0 ? activeDoctors : DOCTORS;
-
             const totalSessions = Object.values(byDoctor).reduce((a, v) => a + v.length, 0);
             const d = new Date(date + 'T00:00:00');
             const dayLabel = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
             const isToday = date === toDateStr(new Date());
 
-            // Header
             tabs.innerHTML = `<div style="font-size:13px;color:var(--text-dim);padding:4px 0;width:100%;">${isToday ? '📍 Today — ' : ''}${dayLabel} &nbsp;·&nbsp; <strong style="color:var(--text);">${totalSessions} total session${totalSessions !== 1 ? 's' : ''}</strong></div>`;
 
             if (totalSessions === 0) {
@@ -3364,9 +3353,7 @@
         window.renderRoomOccupation = function () {
             const date = document.getElementById('roomDate').value || toDateStr(new Date());
             const rooms = ['Room A', 'Room B'];
-            const roomColors = ['accent', 'teal'];
 
-            // Collect all sessions for this date
             const allSessions = [];
             patients.forEach(p => {
                 (p.history || []).forEach(h => {
@@ -3374,14 +3361,12 @@
                 });
             });
 
-            // Group by room
             const byRoom = { 'Room A': [], 'Room B': [] };
             allSessions.forEach(s => {
                 if (s.room === 'Room A') byRoom['Room A'].push(s);
                 else if (s.room === 'Room B') byRoom['Room B'].push(s);
             });
 
-            // Get all unique time slots for timeline
             const allTimes = [...new Set(allSessions.map(s => s.time))].sort((a, b) => timeToMinutes(a) - timeToMinutes(b));
 
             const grid = document.getElementById('roomGrid');
@@ -3412,7 +3397,6 @@
     </div>`;
             }).join('');
 
-            // Full day timeline
             const timeline = document.getElementById('roomTimeline');
             if (allTimes.length === 0) {
                 timeline.innerHTML = `<div class="sched-empty"><div class="se-icon">🏠</div><p>No sessions scheduled for this day.</p></div>`;
