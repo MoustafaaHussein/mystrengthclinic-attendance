@@ -874,7 +874,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDe4BRi8_Jd20YID4orh1vebCAWuHAKGp4",
@@ -904,6 +904,7 @@ const ROOM_COLOR_VARS = ['accent','teal','purple'];
 const ROOM_CELL_COLORS = ['var(--danger-dim)','var(--teal-dim)','var(--purple-dim)'];
 const ROOM_HEADER_COLORS = ['var(--accent)','var(--teal)','var(--purple)'];
 const TITLES = { patients:'Patients List', profiles:'Patient Profiles', booking:'Book a Session', add:'Add New Patient', doctors:'Associated Doctors', schedule:'Schedule', daily:'Daily Overview', rooms:'Room Occupation', doctorDetails:'Doctors Details', assignedPatients:'Assigned Patients', manageDoctors:'Manage Doctors' };
+const WHATSAPP_QUEUE_COLLECTION = 'whatsappQueue';
 
 // ── DYNAMIC DOCTORS (from Firestore) ──
 let DOCTORS = [];      // array of {id, name, emoji, gender, spec}
@@ -1319,6 +1320,47 @@ function getRoomOccupiedAt(room, date, time, sessionType, excludeBookedAt = null
     return null;
 }
 
+function toWhatsAppPhone(phone) {
+    const cleaned = (phone || '').replace(/[^\d+]/g, '');
+    if (!cleaned) return '';
+    if (cleaned.startsWith('+')) return cleaned;
+    if (cleaned.startsWith('00')) return `+${cleaned.slice(2)}`;
+    return `+${cleaned}`;
+}
+
+function buildBookingWhatsAppMessage(patientName, entry) {
+    const sessionDate = fmtDate(entry.date);
+    const sessionTime = fmtTime(entry.time);
+    const roomPart = entry.room ? `\nRoom: ${entry.room}` : '';
+    const notePart = entry.notes ? `\nNotes: ${entry.notes}` : '';
+    return `Hi ${patientName}, your ${entry.sessionType} session is booked on ${sessionDate} at ${sessionTime} with ${entry.doctor}.${roomPart}${notePart}\n\n- Clinic Pro`;
+}
+
+async function queueBookingWhatsAppNotification(patient, entry) {
+    const phoneE164 = toWhatsAppPhone(patient.phone);
+    if (!phoneE164) return { queued: false, reason: 'missing-phone' };
+    const message = buildBookingWhatsAppMessage(patient.name, entry);
+    const payload = {
+        type: 'booking-confirmation',
+        status: 'pending',
+        patientId: patient.firestoreId || '',
+        patientName: patient.name || '',
+        phoneE164,
+        message,
+        booking: {
+            date: entry.date,
+            time: entry.time,
+            doctor: entry.doctor || '',
+            room: entry.room || '',
+            sessionType: entry.sessionType || ''
+        },
+        requestedBy: auth.currentUser ? (auth.currentUser.email || auth.currentUser.uid || '') : '',
+        createdAt: serverTimestamp()
+    };
+    await addDoc(collection(db, WHATSAPP_QUEUE_COLLECTION), payload);
+    return { queued: true };
+}
+
 // ── BOOKING ──
 window.filterBookingList = () => {
     const q = document.getElementById('bookSearch').value.toLowerCase(), dd = document.getElementById('ptDropdown');
@@ -1398,6 +1440,13 @@ window.confirmBooking = async () => {
     if (requiresRoom(sType) && room) entry.room = room;
     const updated = { ...p, sessions: shouldConsumePackage ? p.sessions - 1 : p.sessions, assessmentDone: p.assessmentDone || sType === firstType, history: [entry, ...(p.history || [])] };
     await saveToFirestore(updated);
+    try {
+        const waResult = await queueBookingWhatsAppNotification(updated, entry);
+        if (waResult.reason === 'missing-phone') toast(`Session booked for ${p.name}, but WhatsApp was skipped (no phone number).`, true);
+    } catch (e) {
+        console.error('WhatsApp queue error:', e);
+        toast('Session booked, but WhatsApp queue failed. Please retry manually.', true);
+    }
     document.getElementById('selPtSessions').textContent = updated.sessions;
     document.getElementById('bookNotes').value = '';
     document.getElementById('bookType').value = '';
