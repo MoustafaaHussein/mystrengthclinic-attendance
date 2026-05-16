@@ -189,6 +189,15 @@
         .badge-doc { background: var(--accent-glow); color: var(--accent); font-size: 11px; padding: 3px 9px; }
         .badge-purple { background: var(--purple-dim); color: var(--purple); }
         .badge-teal { background: var(--teal-dim); color: var(--teal); }
+        .badge-active { background: var(--success-dim); color: var(--success); }
+        .badge-frozen { background: var(--elevated); color: var(--text-muted); border: 1px solid var(--border); }
+
+        /* ACTIVE LIST */
+        .active-list-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .active-tab { padding: 9px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--elevated); color: var(--text-dim); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .18s; }
+        .active-tab:hover { border-color: var(--accent); color: var(--text); }
+        .active-tab.selected { border-color: var(--accent); background: var(--accent-glow); color: var(--accent); }
+        .active-list-meta { font-size: 12px; color: var(--text-dim); margin-bottom: 14px; }
 
         /* BUTTONS */
         .btn { padding: 9px 16px; border-radius: 9px; border: none; font-weight: 600; font-size: 13px; font-family: inherit; cursor: pointer; transition: all .18s; display: inline-flex; align-items: center; gap: 6px; }
@@ -481,6 +490,7 @@
         <div class="nav-item" onclick="showPanel('profiles',this)"><span class="nav-icon">🪪</span> Patient Profiles</div>
         <div class="nav-item" onclick="showPanel('booking',this)"><span class="nav-icon">📅</span> Book a Session</div>
         <div class="nav-item" onclick="showPanel('add',this)"><span class="nav-icon">➕</span> Add New Patient</div>
+        <div class="nav-item" onclick="showPanel('activeList',this)"><span class="nav-icon">📊</span> Active List<span class="nav-badge" id="frozenBadge" style="display:none">0</span></div>
         <div class="nav-label">Clinic</div>
         <div class="nav-item" onclick="showPanel('schedule',this)"><span class="nav-icon">🗓️</span> Schedule</div>
         <div class="nav-item" onclick="showPanel('daily',this)"><span class="nav-icon">📋</span> Daily Overview</div>
@@ -526,6 +536,22 @@
                 </table>
             </div>
         </div>
+        <!-- ACTIVE LIST -->
+        <div class="panel" id="panel-activeList">
+            <div class="stats-row" id="activeListStats"></div>
+            <div class="active-list-meta" id="activeListMeta"></div>
+            <div class="active-list-tabs" id="activeListTabs">
+                <button type="button" class="active-tab selected" data-filter="active" onclick="setActiveListFilter('active',this)">✅ Active</button>
+                <button type="button" class="active-tab" data-filter="frozen" onclick="setActiveListFilter('frozen',this)">🧊 Frozen</button>
+                <button type="button" class="active-tab" data-filter="all" onclick="setActiveListFilter('all',this)">📋 All</button>
+            </div>
+            <div class="search-row">
+                <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="alSearch" oninput="renderActiveList()" placeholder="Search by name or phone…" autocomplete="off"></div>
+                <select class="filter-sel" id="alDoctorFilter" onchange="renderActiveList()"><option value="">All Doctors</option></select>
+            </div>
+            <div id="activeListContent"></div>
+        </div>
+
 
         <!-- PROFILES -->
         <div class="panel" id="panel-profiles">
@@ -903,8 +929,10 @@ const ROOM_ICON_CLASSES = ['a','b','c'];
 const ROOM_COLOR_VARS = ['accent','teal','purple'];
 const ROOM_CELL_COLORS = ['var(--danger-dim)','var(--teal-dim)','var(--purple-dim)'];
 const ROOM_HEADER_COLORS = ['var(--accent)','var(--teal)','var(--purple)'];
-const TITLES = { patients:'Patients List', profiles:'Patient Profiles', booking:'Book a Session', add:'Add New Patient', doctors:'Associated Doctors', schedule:'Schedule', daily:'Daily Overview', rooms:'Room Occupation', doctorDetails:'Doctors Details', assignedPatients:'Assigned Patients', manageDoctors:'Manage Doctors' };
+const TITLES = { patients:'Patients List', profiles:'Patient Profiles', booking:'Book a Session', add:'Add New Patient', doctors:'Associated Doctors', schedule:'Schedule', daily:'Daily Overview', rooms:'Room Occupation', doctorDetails:'Doctors Details', assignedPatients:'Assigned Patients', manageDoctors:'Manage Doctors', activeList:'Active List' };
 const WHATSAPP_QUEUE_COLLECTION = 'whatsappQueue';
+const ACTIVE_WEEK_DAYS = 7;
+let activeListFilter = 'active';
 
 // ── DYNAMIC DOCTORS (from Firestore) ──
 let DOCTORS = [];      // array of {id, name, emoji, gender, spec}
@@ -1086,10 +1114,13 @@ function startListeningPatients() {
         renderDoctors(); renderSchedDoctorPicker();
         renderDoctorDetailsSection();
         renderAssignedPatients();
+        renderActiveList();
+        updateFrozenBadge();
         if (schedActiveDoctor) renderSchedWeek();
         const aid = (document.querySelector('.panel.active') || {}).id || '';
         if (aid === 'panel-daily') renderDailyOverview();
         if (aid === 'panel-rooms') renderRoomOccupation();
+        if (aid === 'panel-activeList') renderActiveList();
         if (aid === 'panel-profiles') {
             if (editPatientFid && document.getElementById('profileDetail').style.display !== 'none')
                 showProfileDetail(editPatientFid);
@@ -1129,15 +1160,17 @@ window.showPanel = (id, el) => {
     if (id === 'doctorDetails') renderDoctorDetailsSection();
     if (id === 'assignedPatients') renderAssignedPatients();
     if (id === 'manageDoctors') { renderDoctorManageList(); resetDoctorForm(); }
+    if (id === 'activeList') renderActiveList();
     closeSidebar();
 };
 
 function populateSelects() {
     const doctorNames = DOCTORS.map(d => d.name);
-    ['doctorFilter','bookDoctor','pPrimaryDoctor','ddAssignedDoctor','apDoctorFilter'].forEach(sid => {
+    ['doctorFilter','bookDoctor','pPrimaryDoctor','ddAssignedDoctor','apDoctorFilter','alDoctorFilter'].forEach(sid => {
         const el = document.getElementById(sid); if (!el) return;
         if (sid === 'doctorFilter') el.innerHTML = '<option value="">All Doctors</option>';
         else if (sid === 'apDoctorFilter') el.innerHTML = '<option value="">All Assigned Doctors</option>';
+        else if (sid === 'alDoctorFilter') el.innerHTML = '<option value="">All Doctors</option>';
         else el.innerHTML = '<option value="">Select Doctor</option>';
         doctorNames.forEach(d => el.innerHTML += `<option>${d}</option>`);
     });
@@ -1679,6 +1712,148 @@ window.renderAssignedPatients = function () {
     wrap.innerHTML = done.map(p => `<div class="sched-slot" style="margin-bottom:10px;cursor:pointer;" onclick="openAssignedPatientProfile('${p.firestoreId}')"><div class="sched-slot-info"><div class="sched-pt-name">${p.name}</div><div class="sched-pt-sub">Primary: ${p.primaryDoctor || p.doctor || '—'} · Assigned: ${p.doctor || '—'}</div><div class="sched-pt-sub">Plan: <span style="color:var(--purple)">${p.plan || 'Mixed'}</span> · Sessions needed: <span style="color:var(--accent)">${p.sessionsNeeded || p.subscribed || 0}</span></div></div></div>`).join('');
 };
 
+// ── ACTIVE LIST ──
+function getActiveWeekRange() {
+    const end = new Date();
+    end.setHours(0, 0, 0, 0);
+    const start = new Date(end);
+    start.setDate(start.getDate() - (ACTIVE_WEEK_DAYS - 1));
+    return { startStr: toDateStr(start), endStr: toDateStr(end) };
+}
+
+function patientHasSessionInActiveWeek(patient) {
+    const { startStr, endStr } = getActiveWeekRange();
+    return (patient.history || []).some(h => h.date && h.date >= startStr && h.date <= endStr);
+}
+
+function getPatientActivityStatus(patient) {
+    return patientHasSessionInActiveWeek(patient) ? 'active' : 'frozen';
+}
+
+function getPatientSessionsInActiveWeek(patient) {
+    const { startStr, endStr } = getActiveWeekRange();
+    return (patient.history || []).filter(h => h.date && h.date >= startStr && h.date <= endStr).length;
+}
+
+function getPatientLastSessionDate(patient) {
+    const dates = (patient.history || []).map(h => h.date).filter(Boolean).sort();
+    return dates.length ? dates[dates.length - 1] : null;
+}
+
+function daysSinceLastSession(patient) {
+    const last = getPatientLastSessionDate(patient);
+    if (!last) return null;
+    const lastD = new Date(last + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.floor((today - lastD) / 86400000);
+}
+
+function formatLastSessionLabel(patient) {
+    const weekCount = getPatientSessionsInActiveWeek(patient);
+    if (weekCount > 0) {
+        return `${weekCount} session${weekCount !== 1 ? 's' : ''} in the last ${ACTIVE_WEEK_DAYS} days`;
+    }
+    const days = daysSinceLastSession(patient);
+    if (days === null) return 'No sessions booked yet';
+    if (days === 0) return 'Last session today (outside active window)';
+    if (days === 1) return 'Last session 1 day ago';
+    return `Last session ${days} days ago`;
+}
+
+function updateFrozenBadge() {
+    const frozen = patients.filter(p => getPatientActivityStatus(p) === 'frozen').length;
+    const badge = document.getElementById('frozenBadge');
+    if (!badge) return;
+    badge.textContent = frozen;
+    badge.style.display = frozen > 0 ? '' : 'none';
+}
+
+window.setActiveListFilter = (filter, el) => {
+    activeListFilter = filter;
+    document.querySelectorAll('.active-tab').forEach(tab => tab.classList.toggle('selected', tab === el));
+    renderActiveList();
+};
+
+window.renderActiveList = function () {
+    const statsEl = document.getElementById('activeListStats');
+    const metaEl = document.getElementById('activeListMeta');
+    const contentEl = document.getElementById('activeListContent');
+    if (!contentEl) return;
+
+    const { startStr, endStr } = getActiveWeekRange();
+    const activePatients = patients.filter(p => getPatientActivityStatus(p) === 'active');
+    const frozenPatients = patients.filter(p => getPatientActivityStatus(p) === 'frozen');
+
+    updateFrozenBadge();
+
+    if (statsEl) {
+        statsEl.innerHTML = `
+            <div class="stat-card"><div class="stat-label">Active Patients</div><div class="stat-value" style="color:var(--success)">${activePatients.length}</div><div class="stat-sub">session in last ${ACTIVE_WEEK_DAYS} days</div></div>
+            <div class="stat-card"><div class="stat-label">Frozen Patients</div><div class="stat-value" style="color:var(--text-muted)">${frozenPatients.length}</div><div class="stat-sub">no session this week</div></div>
+            <div class="stat-card"><div class="stat-label">Total Patients</div><div class="stat-value" style="color:var(--accent)">${patients.length}</div><div class="stat-sub">on roster</div></div>`;
+    }
+    if (metaEl) {
+        metaEl.textContent = `Rolling ${ACTIVE_WEEK_DAYS}-day window: ${fmtDate(startStr)} → ${fmtDate(endStr)}. Active = at least one booked session on any day in this period.`;
+    }
+
+    document.querySelectorAll('.active-tab').forEach(tab => {
+        const f = tab.dataset.filter;
+        const count = f === 'active' ? activePatients.length : f === 'frozen' ? frozenPatients.length : patients.length;
+        const base = tab.textContent.replace(/\s*\(\d+\)\s*$/, '').trim();
+        tab.textContent = `${base} (${count})`;
+    });
+
+    const q = (document.getElementById('alSearch')?.value || '').toLowerCase();
+    const df = (document.getElementById('alDoctorFilter')?.value || '').trim();
+    let list = patients.filter(p =>
+        (p.name || '').toLowerCase().includes(q) || (p.phone || '').includes(q)
+    );
+    if (df) list = list.filter(p => (p.doctor || '') === df || (p.primaryDoctor || '') === df);
+    if (activeListFilter === 'active') list = list.filter(p => getPatientActivityStatus(p) === 'active');
+    else if (activeListFilter === 'frozen') list = list.filter(p => getPatientActivityStatus(p) === 'frozen');
+    list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    if (!list.length) {
+        const emptyMsg = activeListFilter === 'active' ? 'No active patients in this period.'
+            : activeListFilter === 'frozen' ? 'No frozen patients — everyone has booked recently!'
+            : 'No patients match this filter.';
+        contentEl.innerHTML = `<div class="empty-state"><div class="empty-icon">${activeListFilter === 'frozen' ? '🧊' : '🔍'}</div><p>${emptyMsg}</p></div>`;
+        return;
+    }
+
+    contentEl.innerHTML = list.map(p => {
+        const status = getPatientActivityStatus(p);
+        const statusBadge = status === 'active'
+            ? '<span class="badge badge-active">Active</span>'
+            : '<span class="badge badge-frozen">Frozen</span>';
+        const lastLabel = formatLastSessionLabel(p);
+        const cls = p.sessions === 0 ? 'badge-empty' : p.sessions <= 2 ? 'badge-low' : 'badge-ok';
+        return `<div class="sched-slot" style="margin-bottom:10px;cursor:pointer;" onclick="openProfileById('${p.firestoreId}')">
+            <div class="sched-slot-info">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <div class="sched-pt-name">${p.name}</div>
+                    ${statusBadge}
+                </div>
+                <div class="sched-pt-sub">${p.phone || '—'} · ${p.doctor || p.primaryDoctor || '—'}</div>
+                <div class="sched-pt-sub">${lastLabel}</div>
+                <div class="sched-pt-sub"><span class="badge ${cls}" style="font-size:10px;">${p.sessions} sessions left</span></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+                <button class="btn btn-success btn-sm" onclick="event.stopPropagation();selectBookingPatientFromActive('${p.firestoreId}')">📅 Book</button>
+                <button class="btn btn-purple btn-sm" onclick="event.stopPropagation();openProfileById('${p.firestoreId}')">🪪 Profile</button>
+            </div>
+        </div>`;
+    }).join('');
+};
+
+window.selectBookingPatientFromActive = (fid) => {
+    const nav = document.querySelector('.nav-item[onclick*="booking"]');
+    showPanel('booking', nav || document.querySelector('.nav-item'));
+    selectBookingPatient(fid);
+};
+
+
 // ── DOCTORS VIEW ──
 window.renderDoctors = function () {
     document.getElementById('doctorsGrid').innerHTML = DOCTORS.map(d => {
@@ -1901,8 +2076,8 @@ document.getElementById('editModal').addEventListener('click', e => { if (e.targ
 
 // ── EXPORT ──
 window.exportToCSV = () => {
-    let csv = 'Name,Phone,PrimaryDoctor,AssignedDoctor,TreatmentPlan,InitialSessionType,SessionsNeeded,Slot,SessionsLeft,Subscribed,AmountEGP,TotalBooked\n';
-    patients.forEach(p => csv += `${p.name},${p.phone || ''},${p.primaryDoctor || p.doctor || ''},${p.doctor || ''},${p.plan || 'Mixed'},${p.initialSessionType || 'Assessment'},${p.sessionsNeeded || p.subscribed || 0},${p.time},${p.sessions},${p.subscribed || 0},${p.amount || 0},${(p.history || []).length}\n`);
+    let csv = 'Name,Phone,PrimaryDoctor,AssignedDoctor,ActivityStatus,SessionsInLast7Days,LastSessionDate,TreatmentPlan,InitialSessionType,SessionsNeeded,Slot,SessionsLeft,Subscribed,AmountEGP,TotalBooked\n';
+    patients.forEach(p => { const st = getPatientActivityStatus(p); csv += `${p.name},${p.phone || ''},${p.primaryDoctor || p.doctor || ''},${p.doctor || ''},${st},${getPatientSessionsInActiveWeek(p)},${getPatientLastSessionDate(p) || ''},${p.plan || 'Mixed'},${p.initialSessionType || 'Assessment'},${p.sessionsNeeded || p.subscribed || 0},${p.time},${p.sessions},${p.subscribed || 0},${p.amount || 0},${(p.history || []).length}\n`; });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     a.download = 'ClinicPro_Export.csv'; a.click();
@@ -1946,6 +2121,7 @@ window.showPanelMobile = (id, el) => {
     if (id === 'daily') renderDailyOverview();
     if (id === 'rooms') renderRoomOccupation();
     if (id === 'manageDoctors') { renderDoctorManageList(); resetDoctorForm(); }
+    if (id === 'activeList') renderActiveList();
     closeSidebar();
     const ca = document.querySelector('.content-area'); if (ca) ca.scrollTop = 0;
 };
