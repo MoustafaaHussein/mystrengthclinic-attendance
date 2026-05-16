@@ -874,7 +874,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc, addDoc, getDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDe4BRi8_Jd20YID4orh1vebCAWuHAKGp4",
@@ -912,6 +912,7 @@ let patients = [];
 let bookingPatientId = null;
 let unsubscribe = null;
 let unsubDoctors = null;
+let dedupingDoctors = false;
 let schedActiveDoctor = null;
 let schedWeekOffset = 0;
 let schedActiveDate = null;
@@ -945,7 +946,11 @@ window.doLogin = async () => {
     try { await signInWithEmailAndPassword(auth, email, pass); }
     catch (e) { errEl.textContent = 'Invalid email or password. Try again.'; }
 };
-window.doLogout = async () => { if (unsubscribe) unsubscribe(); if (unsubDoctors) unsubDoctors(); await signOut(auth); };
+window.doLogout = async () => {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    if (unsubDoctors) { unsubDoctors(); unsubDoctors = null; }
+    await signOut(auth);
+};
 document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') window.doLogin(); });
 
 onAuthStateChanged(auth, user => {
@@ -969,30 +974,98 @@ onAuthStateChanged(auth, user => {
 });
 
 // ── FIRESTORE: DOCTORS ──
+const DEFAULT_DOCTORS = [
+    { name: 'Dr. Youssef', emoji: '👨‍⚕️', gender: 'male', spec: 'Physiotherapy' },
+    { name: 'Dr. Hadeer', emoji: '👩‍⚕️', gender: 'female', spec: 'Rehabilitation' },
+    { name: 'Dr. Hamdoon', emoji: '👨‍⚕️', gender: 'male', spec: '' },
+    { name: 'Dr. Abdullah', emoji: '👨‍⚕️', gender: 'male', spec: '' },
+    { name: 'Dr. Habiba', emoji: '👩‍⚕️', gender: 'female', spec: '' },
+    { name: 'Dr. Ahmed Yehia', emoji: '👨‍⚕️', gender: 'male', spec: '' },
+    { name: 'Dr. Habiba Saied', emoji: '👩‍⚕️', gender: 'female', spec: '' },
+    { name: 'Dr. Yehia Sadek', emoji: '👨‍⚕️', gender: 'male', spec: '' },
+    { name: 'Dr. Zeyad Ramzy', emoji: '👨‍⚕️', gender: 'male', spec: '' },
+    { name: 'Dr. Mostafa moataz', emoji: '👨‍⚕️', gender: 'male', spec: '' }
+];
+
+function doctorDocId(name) {
+    const slug = (name || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    return slug ? `doc_${slug}` : `doc_${Date.now()}`;
+}
+
+function normalizeDoctorName(name) {
+    return (name || '').trim().toLowerCase();
+}
+
+function pickDoctorToKeep(group) {
+    return [...group].sort((a, b) => {
+        const specScore = (d) => (d.spec ? 1 : 0);
+        if (specScore(b) !== specScore(a)) return specScore(b) - specScore(a);
+        return a.id.localeCompare(b.id);
+    })[0];
+}
+
+async function seedDefaultDoctorsOnce() {
+    const lockRef = doc(db, 'doctors', '_seed');
+    const lockSnap = await getDoc(lockRef);
+    if (lockSnap.exists()) return;
+    const batch = writeBatch(db);
+    DEFAULT_DOCTORS.forEach(d => batch.set(doc(db, 'doctors', doctorDocId(d.name)), d));
+    batch.set(lockRef, { seededAt: Date.now() });
+    await batch.commit();
+}
+
+async function removeDuplicateDoctors(docs) {
+    const realDocs = docs.filter(d => d.id !== '_seed');
+    const byName = new Map();
+    realDocs.forEach(d => {
+        const key = normalizeDoctorName(d.name);
+        if (!key) return;
+        if (!byName.has(key)) byName.set(key, []);
+        byName.get(key).push(d);
+    });
+    const toDelete = [];
+    for (const group of byName.values()) {
+        if (group.length <= 1) continue;
+        const keep = pickDoctorToKeep(group);
+        group.forEach(d => { if (d.id !== keep.id) toDelete.push(d.id); });
+    }
+    if (!toDelete.length) return false;
+    const batch = writeBatch(db);
+    toDelete.forEach(id => batch.delete(doc(db, 'doctors', id)));
+    await batch.commit();
+    toast(`Removed ${toDelete.length} duplicate doctor${toDelete.length !== 1 ? 's' : ''} from roster`);
+    return true;
+}
+
 function startListeningDoctors() {
+    if (unsubDoctors) return;
     setSyncing(true);
-    unsubDoctors = onSnapshot(collection(db, 'doctors'), snapshot => {
-        if (snapshot.empty) {
-            // seed default doctors on first load
-            const defaults = [
-                {name:'Dr. Youssef',emoji:'👨‍⚕️',gender:'male',spec:'Physiotherapy'},
-                {name:'Dr. Hadeer',emoji:'👩‍⚕️',gender:'female',spec:'Rehabilitation'},
-                {name:'Dr. Hamdoon',emoji:'👨‍⚕️',gender:'male',spec:''},
-                {name:'Dr. Abdullah',emoji:'👨‍⚕️',gender:'male',spec:''},
-                {name:'Dr. Habiba',emoji:'👩‍⚕️',gender:'female',spec:''},
-                {name:'Dr. Ahmed Yehia',emoji:'👨‍⚕️',gender:'male',spec:''},
-                {name:'Dr. Habiba Saied',emoji:'👩‍⚕️',gender:'female',spec:''},
-                {name:'Dr. Yehia Sadek',emoji:'👨‍⚕️',gender:'male',spec:''},
-                {name:'Dr. Zeyad Ramzy',emoji:'👨‍⚕️',gender:'male',spec:''},
-                {name:'Dr. Mostafa moataz',emoji:'👨‍⚕️',gender:'male',spec:''}
-            ];
-            defaults.forEach(async (d, i) => {
-                const id = 'doc_' + (Date.now() + i);
-                await setDoc(doc(db, 'doctors', id), d);
-            });
+    unsubDoctors = onSnapshot(collection(db, 'doctors'), async snapshot => {
+        const docs = snapshot.docs
+            .filter(d => d.id !== '_seed')
+            .map(d => ({ id: d.id, ...d.data() }));
+
+        if (!docs.length && !dedupingDoctors) {
+            dedupingDoctors = true;
+            try { await seedDefaultDoctorsOnce(); }
+            catch (e) { console.error('Doctor seed failed:', e); }
+            finally { dedupingDoctors = false; }
             return;
         }
-        DOCTORS = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        const names = docs.map(d => normalizeDoctorName(d.name));
+        const hasDupes = names.length !== new Set(names).size;
+        if (hasDupes && !dedupingDoctors) {
+            dedupingDoctors = true;
+            try {
+                if (await removeDuplicateDoctors(docs)) return;
+            } catch (e) {
+                console.error('Doctor dedupe failed:', e);
+                toast('Could not remove duplicate doctors. Try again.', true);
+            } finally { dedupingDoctors = false; }
+        }
+
+        DOCTORS = docs;
         DOCTORS.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         populateSelects();
         renderDoctorManageList();
@@ -1141,7 +1214,7 @@ window.saveDoctorEntry = async () => {
     const dup = DOCTORS.find(d => d.name.toLowerCase() === name.toLowerCase() && d.id !== editingDoctorId);
     if (dup) { fb.textContent = '⚠️ A doctor with this name already exists.'; fb.style.color = 'var(--danger)'; return; }
     const data = { name, emoji: selectedEmoji, gender: selectedGender, spec };
-    const docId = editingDoctorId || ('doc_' + Date.now());
+    const docId = editingDoctorId || doctorDocId(name);
     await setDoc(doc(db, 'doctors', docId), data);
     fb.textContent = editingDoctorId ? `✅ ${name} updated!` : `✅ ${name} added!`;
     fb.style.color = 'var(--success)';
